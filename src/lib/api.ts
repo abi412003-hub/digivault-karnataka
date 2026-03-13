@@ -1,4 +1,20 @@
 const BASE_URL = "https://xorgsduvbpaokegawhbd.supabase.co/functions/v1/erpnext-proxy";
+const ERPNEXT_URL = "https://edigivault.m.frappe.cloud";
+
+/**
+ * Convert an ERPNext file path to a full accessible URL.
+ * Private files go through the proxy to get auth. Public files use direct URL.
+ */
+export function getFileUrl(path: string | null | undefined): string {
+  if (!path) return "";
+  if (path.startsWith("http")) return path;
+  // Private files need to go through proxy for auth
+  if (path.startsWith("/private/")) {
+    return `${BASE_URL}?path=${encodeURIComponent(path)}`;
+  }
+  // Public files can be accessed directly
+  return ERPNEXT_URL + path;
+}
 
 export async function fetchList(
   doctype: string,

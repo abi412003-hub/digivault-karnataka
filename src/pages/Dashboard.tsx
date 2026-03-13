@@ -14,10 +14,8 @@ import {
 } from "lucide-react";
 import BottomTabs from "@/components/BottomTabs";
 import { useAuth } from "@/contexts/AuthContext";
-import { fetchList, fetchOne } from "@/lib/api";
+import { fetchList, fetchOne, getFileUrl } from "@/lib/api";
 import { format, parseISO } from "date-fns";
-
-const ERPNEXT_URL = "https://edigivault.m.frappe.cloud";
 
 /* ── status badge colors ── */
 const statusStyles: Record<string, { bg: string; text: string }> = {
@@ -57,7 +55,7 @@ const Dashboard = () => {
       fetchOne("DigiVault Client", clientId)
         .then((data: any) => {
           if (data?.client_photo) {
-            setPhotoUrl(data.client_photo.startsWith("http") ? data.client_photo : ERPNEXT_URL + data.client_photo);
+            setPhotoUrl(getFileUrl(data.client_photo));
           }
         })
         .catch(() => {});

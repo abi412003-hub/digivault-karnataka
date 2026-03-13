@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import BottomTabs from "@/components/BottomTabs";
 import { useAuth } from "@/contexts/AuthContext";
-import { fetchOne, uploadFile, updateRecord } from "@/lib/api";
+import { fetchOne, uploadFile, updateRecord, getFileUrl } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -54,10 +54,7 @@ const SettingsPage = () => {
       fetchOne("DigiVault Client", auth.client_id)
         .then((data: any) => {
           if (data?.client_photo) {
-            const url = data.client_photo.startsWith("http")
-              ? data.client_photo
-              : "https://edigivault.m.frappe.cloud" + data.client_photo;
-            setClientPhoto(url);
+            setClientPhoto(getFileUrl(data.client_photo));
           }
           if (data?.client_name) setClientName(data.client_name);
         })
@@ -75,7 +72,7 @@ const SettingsPage = () => {
       const fileUrl = uploadRes?.message?.file_url;
       if (fileUrl) {
         await updateRecord("DigiVault Client", auth.client_id, { client_photo: fileUrl });
-        setClientPhoto(fileUrl);
+        setClientPhoto(getFileUrl(fileUrl));
         toast({ title: "Profile photo updated" });
       } else {
         throw new Error("Upload failed");

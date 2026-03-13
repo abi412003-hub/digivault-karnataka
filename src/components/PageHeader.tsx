@@ -2,9 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Bell, MessageSquare, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
-import { fetchOne } from "@/lib/api";
-
-const ERPNEXT_URL = "https://edigivault.m.frappe.cloud";
+import { fetchOne, getFileUrl } from "@/lib/api";
 
 interface Props {
   title: string;
@@ -21,10 +19,7 @@ const PageHeader = ({ title, showBack = true }: Props) => {
       fetchOne("DigiVault Client", auth.client_id)
         .then((data: any) => {
           if (data?.client_photo) {
-            const url = data.client_photo.startsWith("http")
-              ? data.client_photo
-              : ERPNEXT_URL + data.client_photo;
-            setPhotoUrl(url);
+            setPhotoUrl(getFileUrl(data.client_photo));
           }
         })
         .catch(() => {});
