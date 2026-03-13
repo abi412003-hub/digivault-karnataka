@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   FolderOpen, ClipboardList, FileText, MapPin, BarChart3, RefreshCw,
   Flag, Ruler, CheckCircle, Pencil, ShieldCheck, Handshake, MapPinned,
@@ -49,6 +49,9 @@ interface ServiceItem {
 const SelectService = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const projectId = searchParams.get("project") || "";
+  const projectName = searchParams.get("projectName") || "";
   const [services, setServices] = useState(allServices);
   const [selected, setSelected] = useState<string | null>(null);
 
@@ -69,9 +72,10 @@ const SelectService = () => {
 
   const handleSelect = (serviceName: string) => {
     setSelected(serviceName);
-    navigate(
-      `/properties/${encodeURIComponent(id!)}/select-sub-service?group=${encodeURIComponent(serviceName)}`
-    );
+    const params = new URLSearchParams({ group: serviceName });
+    if (projectId) params.set("project", projectId);
+    if (projectName) params.set("projectName", projectName);
+    navigate(`/properties/${encodeURIComponent(id!)}/select-sub-service?${params}`);
   };
 
   return (
