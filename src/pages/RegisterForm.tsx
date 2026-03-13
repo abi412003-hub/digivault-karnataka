@@ -160,9 +160,9 @@ const RegisterForm = () => {
     setSaving(true);
     try {
       const clientType =
-        auth.registrationType === "individual"
+        auth.registrationType === "Individual"
           ? "Personal"
-          : auth.registrationType === "organization"
+          : auth.registrationType === "Organization"
           ? "Organisation"
           : auth.registrationType;
 
