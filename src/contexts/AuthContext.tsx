@@ -49,11 +49,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const lookupClient = useCallback(async (phone: string): Promise<any | null> => {
     try {
-      const clients = await fetchList(
+      // Exact match on phone number
+      let clients = await fetchList(
         "DigiVault Client",
         ["name", "client_name", "phone_no", "client_status", "registration_type", "client_type"],
-        [["phone_no", "like", "%" + phone]]
+        [["phone_no", "=", phone]]
       );
+      // Fallback: try with leading 0 (some records stored as "09353894389")
+      if (!clients || clients.length === 0) {
+        clients = await fetchList(
+          "DigiVault Client",
+          ["name", "client_name", "phone_no", "client_status", "registration_type", "client_type"],
+          [["phone_no", "=", "0" + phone]]
+        );
+      }
       if (clients && clients.length > 0) return clients[0];
       return null;
     } catch {
