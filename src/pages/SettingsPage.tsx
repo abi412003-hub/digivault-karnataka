@@ -49,7 +49,12 @@ const SettingsPage = () => {
     if (auth.client_id) {
       fetchOne("DigiVault Client", auth.client_id)
         .then((data: any) => {
-          if (data?.client_photo) setClientPhoto(data.client_photo);
+          if (data?.client_photo) {
+            const url = data.client_photo.startsWith("http")
+              ? data.client_photo
+              : "https://edigivault.m.frappe.cloud" + data.client_photo;
+            setClientPhoto(url);
+          }
           if (data?.client_name) setClientName(data.client_name);
         })
         .catch(() => {});

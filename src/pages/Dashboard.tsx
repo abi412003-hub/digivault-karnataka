@@ -14,8 +14,10 @@ import {
 } from "lucide-react";
 import BottomTabs from "@/components/BottomTabs";
 import { useAuth } from "@/contexts/AuthContext";
-import { fetchList } from "@/lib/api";
+import { fetchList, fetchOne } from "@/lib/api";
 import { format, parseISO } from "date-fns";
+
+const ERPNEXT_URL = "https://edigivault.m.frappe.cloud";
 
 /* ── status badge colors ── */
 const statusStyles: Record<string, { bg: string; text: string }> = {
@@ -48,6 +50,19 @@ const Dashboard = () => {
   const [projects, setProjects] = useState(0);
   const [activity, setActivity] = useState(fallbackActivity);
   const [loading, setLoading] = useState(true);
+  const [photoUrl, setPhotoUrl] = useState("");
+
+  useEffect(() => {
+    if (clientId) {
+      fetchOne("DigiVault Client", clientId)
+        .then((data: any) => {
+          if (data?.client_photo) {
+            setPhotoUrl(data.client_photo.startsWith("http") ? data.client_photo : ERPNEXT_URL + data.client_photo);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [clientId]);
 
   useEffect(() => {
     if (!clientId) return;
@@ -103,8 +118,12 @@ const Dashboard = () => {
           <span className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
             <MessageSquare size={18} className="text-primary" />
           </span>
-          <span className="w-10 h-10 rounded-full border border-input bg-muted flex items-center justify-center">
-            <User size={18} className="text-muted-foreground" />
+          <span className="w-10 h-10 rounded-full border border-input bg-muted flex items-center justify-center overflow-hidden">
+            {photoUrl ? (
+              <img src={photoUrl} alt="Profile" className="w-full h-full object-cover" />
+            ) : (
+              <User size={18} className="text-muted-foreground" />
+            )}
           </span>
         </div>
       </div>
