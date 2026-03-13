@@ -173,21 +173,28 @@ const Login = () => {
 
   /* ── Post-verify: lookup client in ERPNext ── */
   const handlePostVerify = useCallback(async (phone: string, supabaseUserId: string) => {
-    const client = await lookupClient(phone);
-    if (client) {
-      setAuth({
-        client_id: client.name,
-        name: client.client_name,
-        phone,
-        registrationType: client.registration_type || "",
-        supabaseUserId,
-      });
-      toast({ title: `Welcome back, ${client.client_name}!` });
-      navigate("/dashboard", { replace: true });
-    } else {
+    try {
+      const client = await lookupClient(phone);
+      if (client) {
+        setAuth({
+          client_id: client.name,
+          name: client.client_name,
+          phone,
+          registrationType: client.registration_type || "",
+          supabaseUserId,
+        });
+        toast({ title: `Welcome back, ${client.client_name}!` });
+        setTimeout(() => navigate("/dashboard", { replace: true }), 100);
+      } else {
+        setAuth((prev) => ({ ...prev, phone, supabaseUserId }));
+        toast({ title: "Phone verified! Complete your registration." });
+        setTimeout(() => navigate("/register-type", { replace: true }), 100);
+      }
+    } catch {
+      // If lookupClient fails, still proceed to registration
       setAuth((prev) => ({ ...prev, phone, supabaseUserId }));
       toast({ title: "Phone verified! Complete your registration." });
-      navigate("/register-type", { replace: true });
+      setTimeout(() => navigate("/register-type", { replace: true }), 100);
     }
   }, [lookupClient, setAuth, toast, navigate]);
 
