@@ -95,11 +95,18 @@ const PropertyDetails = () => {
         </div>
 
         <div className="flex justify-center">
-          <Button size="sm" className="w-[120px]">Edit</Button>
+          <button onClick={() => navigate(-1)} className="text-sm text-primary font-medium">Edit</button>
         </div>
 
         <Button className="w-full h-12" onClick={() => navigate(`/properties/${encodeURIComponent(id!)}/select-service`)}>
           Continue for the service selection
+        </Button>
+        <Button
+          variant="outline"
+          className="w-full h-12 bg-purple-700 hover:bg-purple-800 text-white border-0"
+          onClick={() => navigate("/properties/add")}
+        >
+          Upload Another Property
         </Button>
       </div>
 

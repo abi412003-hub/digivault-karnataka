@@ -167,7 +167,10 @@ const Dashboard = () => {
 
         {/* ── Projects banner ── */}
         <section>
-          <div className="rounded-xl px-4 py-3 flex items-center justify-between bg-[hsl(270_82%_94%)]">
+          <button
+            onClick={() => navigate("/select-project")}
+            className="w-full rounded-xl px-4 py-3 flex items-center justify-between bg-[hsl(270_82%_94%)] hover:bg-[hsl(270_82%_90%)] transition-colors"
+          >
             <div className="flex items-center gap-3">
               <span className="w-9 h-9 rounded-full bg-background flex items-center justify-center">
                 <Landmark size={18} className="text-[hsl(263_70%_50%)]" />
@@ -175,7 +178,7 @@ const Dashboard = () => {
               <span className="text-sm font-bold text-[hsl(263_70%_50%)]">Projects</span>
             </div>
             <span className="text-2xl font-bold text-[hsl(263_70%_50%)]">{projects}</span>
-          </div>
+          </button>
         </section>
 
         {/* ── Quick Actions ── */}
