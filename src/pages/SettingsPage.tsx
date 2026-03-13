@@ -46,6 +46,9 @@ const SettingsPage = () => {
   const [clientPhoto, setClientPhoto] = useState("");
   const [clientName, setClientName] = useState(auth.name || "User");
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
   useEffect(() => {
     if (auth.client_id) {
       fetchOne("DigiVault Client", auth.client_id)
@@ -56,6 +59,29 @@ const SettingsPage = () => {
         .catch(() => {});
     }
   }, [auth.client_id]);
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !auth.client_id) return;
+
+    setUploading(true);
+    try {
+      const uploadRes = await uploadFile(file, "DigiVault Client", auth.client_id, "client_photo");
+      const fileUrl = uploadRes?.message?.file_url;
+      if (fileUrl) {
+        await updateRecord("DigiVault Client", auth.client_id, { client_photo: fileUrl });
+        setClientPhoto(fileUrl);
+        toast({ title: "Profile photo updated" });
+      } else {
+        throw new Error("Upload failed");
+      }
+    } catch {
+      toast({ title: "Failed to upload photo", variant: "destructive" });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   const handleLogout = async () => {
     await logout();
