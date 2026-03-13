@@ -40,7 +40,7 @@ const menuItems = [
 
 const SettingsPage = () => {
   const navigate = useNavigate();
-  const { auth, setAuth } = useAuth();
+  const { auth, logout } = useAuth();
   const { toast } = useToast();
   const [clientPhoto, setClientPhoto] = useState("");
   const [clientName, setClientName] = useState(auth.name || "User");
