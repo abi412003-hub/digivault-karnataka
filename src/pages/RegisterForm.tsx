@@ -60,7 +60,7 @@ const Dropdown = ({
 /* ── main form ──────────────────────────────────────────────── */
 const RegisterForm = () => {
   const navigate = useNavigate();
-  const { auth, setAuth } = useAuth();
+  const { auth, setAuth, lookupClient } = useAuth();
   const { toast } = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -159,6 +159,22 @@ const RegisterForm = () => {
     }
     setSaving(true);
     try {
+      // Check if client already exists with this phone (prevent duplicates)
+      const existing = await lookupClient(auth.phone);
+      if (existing) {
+        // Client already exists — just log them in
+        setAuth({
+          client_id: existing.name,
+          name: existing.client_name,
+          phone: auth.phone,
+          registrationType: existing.registration_type || auth.registrationType,
+          supabaseUserId: auth.supabaseUserId || "",
+        });
+        toast({ title: `Account already exists. Welcome back, ${existing.client_name}!` });
+        navigate("/dashboard", { replace: true });
+        return;
+      }
+
       const clientType =
         auth.registrationType === "Individual"
           ? "Personal"
