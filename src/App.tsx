@@ -25,7 +25,9 @@ import DocCards from "./pages/service-request/DocCards";
 import POA from "./pages/service-request/POA";
 import ESign from "./pages/service-request/ESign";
 import VideoVerify from "./pages/service-request/VideoVerify";
+import Payment from "./pages/service-request/Payment";
 import Transactions from "./pages/Transactions";
+import DocumentListPage from "./pages/DocumentListPage";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
 
