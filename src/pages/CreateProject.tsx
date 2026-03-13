@@ -27,14 +27,19 @@ const CreateProject = () => {
     }
     setSaving(true);
     try {
-      // Create project only — service request is created after property + service selection
       const projRes = await createRecord("DigiVault Project", {
         project_name: title,
         project_description: description,
         client: auth.client_id,
-        project_status: "Pending",
+        project_status: "Draft",
       });
-      const projectName = projRes?.data?.name || "";
+      const projectName = projRes?.data?.name;
+
+      if (!projectName) {
+        toast({ title: "Failed to create project — no ID returned", variant: "destructive" });
+        setSaving(false);
+        return;
+      }
 
       toast({ title: "Project created!" });
       navigate(`/project/${encodeURIComponent(projectName)}/property-edit?name=${encodeURIComponent(title)}`, { replace: true });
