@@ -96,12 +96,28 @@ const SettingsPage = () => {
           <ChevronRight size={22} className="text-primary-foreground rotate-180" />
         </button>
 
-        <div className="w-20 h-20 rounded-full border-[3px] border-primary-foreground bg-muted flex items-center justify-center overflow-hidden mt-4">
-          {clientPhoto ? (
-            <img src={clientPhoto} alt="Profile" className="w-full h-full object-cover" />
-          ) : (
-            <User size={36} className="text-primary-foreground" />
-          )}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handlePhotoUpload}
+        />
+        <div className="relative mt-4">
+          <div className="w-20 h-20 rounded-full border-[3px] border-primary-foreground bg-muted flex items-center justify-center overflow-hidden">
+            {clientPhoto ? (
+              <img src={clientPhoto} alt="Profile" className="w-full h-full object-cover" />
+            ) : (
+              <User size={36} className="text-primary-foreground" />
+            )}
+          </div>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-accent border-2 border-primary-foreground flex items-center justify-center"
+          >
+            <Camera size={14} className="text-accent-foreground" />
+          </button>
         </div>
         <span className="mt-3 text-xl font-bold text-primary-foreground">{clientName}</span>
       </div>
