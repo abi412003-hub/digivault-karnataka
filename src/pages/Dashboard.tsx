@@ -160,8 +160,9 @@ const Dashboard = () => {
         </section>
 
         {/* ── Quick Actions ── */}
-        <section className="grid grid-cols-3 gap-3">
+        <section className="grid grid-cols-2 gap-3">
           {[
+            { label: "Orders", path: "/orders" },
             { label: "Proposals", path: "/proposals" },
             { label: "Estimate", path: "/estimates" },
             { label: "Invoice", path: "/invoices" },
