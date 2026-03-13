@@ -45,3 +45,34 @@ export async function updateRecord(doctype: string, name: string, body: Record<s
   );
   return res.json();
 }
+
+export async function uploadFile(
+  file: File,
+  doctype: string,
+  docname: string,
+  fieldname: string
+) {
+  const reader = new FileReader();
+  const base64 = await new Promise<string>((resolve, reject) => {
+    reader.onload = () => {
+      const result = reader.result as string;
+      resolve(result.split(",")[1]); // strip data:...;base64, prefix
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+  const res = await fetch(BASE_URL + "?path=/api/method/upload_file", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      filename: file.name,
+      filedata: base64,
+      doctype,
+      docname,
+      fieldname,
+      is_private: 0,
+    }),
+  });
+  return res.json();
+}
