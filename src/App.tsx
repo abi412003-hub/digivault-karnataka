@@ -20,6 +20,9 @@ import SelectService from "./pages/properties/SelectService";
 import SelectSubService from "./pages/properties/SelectSubService";
 import PropertyRequests from "./pages/properties/PropertyRequests";
 import CreateProject from "./pages/CreateProject";
+import SelectProject from "./pages/SelectProject";
+import ProjectPropertyEdit from "./pages/ProjectPropertyEdit";
+import ProjectPropertyReview from "./pages/ProjectPropertyReview";
 import Orders from "./pages/Orders";
 import ServiceRequestDetail from "./pages/ServiceRequestDetail";
 import CommonDocs from "./pages/service-request/CommonDocs";
@@ -62,6 +65,9 @@ const App = () => (
             <Route path="/properties/:id/select-sub-service" element={<SelectSubService />} />
             <Route path="/properties/:id/requests" element={<PropertyRequests />} />
             <Route path="/create-project" element={<CreateProject />} />
+            <Route path="/select-project" element={<SelectProject />} />
+            <Route path="/project/:projectId/property-edit" element={<ProjectPropertyEdit />} />
+            <Route path="/project/:projectId/property-review" element={<ProjectPropertyReview />} />
             <Route path="/orders" element={<Orders />} />
             <Route path="/service-request/:srId/detail" element={<ServiceRequestDetail />} />
             <Route path="/service-request/:srId/common-docs" element={<CommonDocs />} />

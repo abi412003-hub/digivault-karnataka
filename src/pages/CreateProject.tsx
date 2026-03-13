@@ -27,30 +27,17 @@ const CreateProject = () => {
     }
     setSaving(true);
     try {
-      // 1. Create project
+      // Create project only — service request is created after property + service selection
       const projRes = await createRecord("DigiVault Project", {
         project_name: title,
         project_description: description,
         client: auth.client_id,
-        project_status: "Pending",
-        service: mainService,
+        project_status: "Open",
       });
       const projectName = projRes?.data?.name || "";
 
-      // 2. Create service request
-      const srRes = await createRecord("DigiVault Service Request", {
-        client: auth.client_id,
-        project: projectName,
-        property: propertyId,
-        main_service: mainService,
-        sub_service: subService,
-        request_status: "Documents Pending",
-        request_date: new Date().toISOString().split("T")[0],
-      });
-      const srName = srRes?.data?.name || "";
-
       toast({ title: "Project created!" });
-      navigate(`/service-request/${encodeURIComponent(srName)}/common-docs`, { replace: true });
+      navigate(`/project/${encodeURIComponent(projectName)}/property-edit?name=${encodeURIComponent(title)}`, { replace: true });
     } catch {
       toast({ title: "Failed to create project", variant: "destructive" });
     } finally {
