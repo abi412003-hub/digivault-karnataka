@@ -86,9 +86,8 @@ const Login = () => {
       toast({ title: error.message || "Invalid OTP", variant: "destructive" });
       return;
     }
-    if (data.session) {
-      await handlePostVerify(cleaned, data.user?.id || "");
-    }
+    // OTP verified — proceed whether or not session is immediately available
+    await handlePostVerify(cleaned, data?.user?.id || "");
   };
 
   const handleResend = async () => {
@@ -151,10 +150,9 @@ const Login = () => {
       toast({ title: error.message || "Invalid OTP", variant: "destructive" });
       return;
     }
-    if (data.session) {
-      setShowRegister(false);
-      await handlePostVerify(cleaned, data.user?.id || "");
-    }
+    // OTP verified — proceed
+    setShowRegister(false);
+    await handlePostVerify(cleaned, data?.user?.id || "");
   };
 
   const handleRegResend = async () => {
@@ -184,17 +182,17 @@ const Login = () => {
           supabaseUserId,
         });
         toast({ title: `Welcome back, ${client.client_name}!` });
-        setTimeout(() => navigate("/dashboard", { replace: true }), 100);
+        navigate("/dashboard", { replace: true });
       } else {
         setAuth((prev) => ({ ...prev, phone, supabaseUserId }));
         toast({ title: "Phone verified! Complete your registration." });
-        setTimeout(() => navigate("/register-type", { replace: true }), 100);
+        navigate("/register-type", { replace: true });
       }
     } catch {
       // If lookupClient fails, still proceed to registration
       setAuth((prev) => ({ ...prev, phone, supabaseUserId }));
       toast({ title: "Phone verified! Complete your registration." });
-      setTimeout(() => navigate("/register-type", { replace: true }), 100);
+      navigate("/register-type", { replace: true });
     }
   }, [lookupClient, setAuth, toast, navigate]);
 
