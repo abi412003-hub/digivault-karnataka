@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { updateRecord } from "@/lib/api";
+import { srTransition } from "@/lib/workflow";
 import { useToast } from "@/hooks/use-toast";
 
 const ESign = () => {

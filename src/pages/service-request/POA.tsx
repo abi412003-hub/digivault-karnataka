@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/contexts/AuthContext";
 import { updateRecord } from "@/lib/api";
+import { srTransition } from "@/lib/workflow";
 import { useToast } from "@/hooks/use-toast";
 
 const paragraphs = [

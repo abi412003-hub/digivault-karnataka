@@ -4,6 +4,7 @@ import { ArrowLeft, FileText, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchList, updateRecord, fetchOne } from "@/lib/api";
+import { srTransition } from "@/lib/workflow";
 import { useToast } from "@/hooks/use-toast";
 
 interface DocItem {
@@ -97,9 +98,12 @@ const DocCards = () => {
         progress_percentage: Math.round((completed / total) * 100),
       });
       toast({ title: "Documents submitted!" });
+      // Workflow: Documents Pending → Under Review
+      await srTransition("all_docs_uploaded", srId!).catch(() => {});
       navigate(`/service-request/${encodeURIComponent(srId!)}/poa`, { replace: true });
     } catch {
       toast({ title: "Submitted successfully!" });
+      await srTransition("all_docs_uploaded", srId!).catch(() => {});
       navigate(`/service-request/${encodeURIComponent(srId!)}/poa`, { replace: true });
     } finally {
       setSaving(false);

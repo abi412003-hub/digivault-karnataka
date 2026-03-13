@@ -2,7 +2,8 @@ import { useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, User, Video, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { updateRecord } from "@/lib/api";
+import { updateRecord, fetchOne } from "@/lib/api";
+import { projectTransition } from "@/lib/workflow";
 import { useToast } from "@/hooks/use-toast";
 
 const VideoVerify = () => {
@@ -72,6 +73,11 @@ const VideoVerify = () => {
         progress_steps_completed: 5,
         progress_percentage: 50,
       });
+      // Workflow: Project Property Mapped → Consent Received
+      const sr = await fetchOne("DigiVault Service Request", srId!);
+      if (sr?.project) {
+        await projectTransition("consent_signed", sr.project).catch(() => {});
+      }
       toast({ title: "Video verification saved!" });
     } catch {
       toast({ title: "Video saved!" });

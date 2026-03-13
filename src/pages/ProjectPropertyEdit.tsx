@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { createRecord, updateRecord } from "@/lib/api";
+import { projectTransition } from "@/lib/workflow";
 import { useToast } from "@/hooks/use-toast";
 import {
   divisions,
@@ -121,6 +122,11 @@ const ProjectPropertyEdit = () => {
         client: auth.client_id,
       });
       const propName = res?.data?.name || "";
+
+      // Workflow: Project Draft → Property Mapped
+      if (projectId) {
+        await projectTransition("property_added", projectId).catch(() => {});
+      }
 
       toast({ title: "Property saved!" });
       navigate(`/project/${encodeURIComponent(projectId || "")}/property-review?property=${encodeURIComponent(propName)}&projectName=${encodeURIComponent(projectName)}`, { replace: true });

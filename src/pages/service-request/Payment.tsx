@@ -3,6 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useState, useEffect } from "react";
 import { fetchOne, updateRecord } from "@/lib/api";
+import { srTransition, paymentTransition, projectTransition } from "@/lib/workflow";
 import { useToast } from "@/hooks/use-toast";
 
 const Payment = () => {
@@ -24,12 +25,18 @@ const Payment = () => {
   const handlePay = async () => {
     if (!srId) return;
     try {
+      // Direct update for progress
       await updateRecord("DigiVault Service Request", srId, {
         payment_status: "Paid",
         request_status: "In Progress",
         progress_steps_completed: 7,
         progress_percentage: 70,
       });
+      // Workflow: fire payment_done on SR + service_paid on project
+      await srTransition("payment_done", srId).catch(() => {});
+      if (sr?.project) {
+        await projectTransition("service_paid", sr.project).catch(() => {});
+      }
       toast({ title: "Payment successful!" });
       navigate("/dashboard");
     } catch {

@@ -4,6 +4,7 @@ import PageHeader from "@/components/PageHeader";
 import BottomTabs from "@/components/BottomTabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchList, createRecord } from "@/lib/api";
+import { srTransition } from "@/lib/workflow";
 import { useToast } from "@/hooks/use-toast";
 
 const ekathaSubs = [
@@ -66,6 +67,8 @@ const SelectSubService = () => {
           request_date: new Date().toISOString().split("T")[0],
         });
         const srName = srRes?.data?.name || "";
+        // Workflow: SR Draft → Documents Pending
+        await srTransition("sr_created", srName).catch(() => {});
         toast({ title: "Service request created!" });
         navigate(`/service-request/${encodeURIComponent(srName)}/common-docs`, { replace: true });
       } catch {
