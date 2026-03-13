@@ -64,6 +64,7 @@ const App = () => (
             <Route path="/service-request/:srId/poa" element={<POA />} />
             <Route path="/service-request/:srId/esign" element={<ESign />} />
             <Route path="/service-request/:srId/video-verify" element={<VideoVerify />} />
+            <Route path="/service-request/:srId/sub-docs/:docName" element={<SubDocs />} />
             <Route path="/service-request/:srId/payment" element={<Payment />} />
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/proposals" element={<DocumentListPage />} />
