@@ -32,10 +32,16 @@ const Payment = () => {
         progress_steps_completed: 7,
         progress_percentage: 70,
       });
-      // Workflow: fire payment_done on SR + service_paid on project
-      await srTransition("payment_done", srId).catch(() => {});
+      // Workflow: only fire if SR hasn't already moved past payment stage
+      const currentStatus = sr?.request_status;
+      if (currentStatus && currentStatus !== "In Progress") {
+        await srTransition("payment_done", srId).catch(() => {});
+      }
       if (sr?.project) {
-        await projectTransition("service_paid", sr.project).catch(() => {});
+        const projData = await fetchOne("DigiVault Project", sr.project).catch(() => null);
+        if (projData && projData.project_status !== "In Progress") {
+          await projectTransition("service_paid", sr.project).catch(() => {});
+        }
       }
       toast({ title: "Payment successful!" });
       navigate("/dashboard");
