@@ -3,13 +3,14 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   FolderOpen, ClipboardList, FileText, MapPin, BarChart3, RefreshCw,
   Flag, Ruler, CheckCircle, Pencil, ShieldCheck, Handshake, MapPinned,
-  GitBranch, Zap,
+  GitBranch, Zap, Droplets, Factory, TrendingUp, Building, Scale,
+  Users, Briefcase, UserCircle,
 } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import BottomTabs from "@/components/BottomTabs";
 import { fetchList } from "@/lib/api";
 
-const fallbackServices = [
+const allServices = [
   { name: "Record Room Documents", icon: FolderOpen },
   { name: "Survey Documents", icon: ClipboardList },
   { name: "E-katha", icon: FileText },
@@ -25,26 +26,18 @@ const fallbackServices = [
   { name: "Land Allotments", icon: MapPinned },
   { name: "Property Bifurcation", icon: GitBranch },
   { name: "Electricity Board Approvals", icon: Zap },
+  { name: "Water Supply Board Approvals", icon: Droplets },
+  { name: "Pollution Control Board Approvals", icon: Factory },
+  { name: "Land Assessment, Survey & Property Valuations", icon: TrendingUp },
+  { name: "Local Authority Services", icon: Building },
+  { name: "Legal Documents", icon: Scale },
+  { name: "Third Party Opinion", icon: Users },
+  { name: "Business Records", icon: Briefcase },
+  { name: "Personal Record", icon: UserCircle },
 ];
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const iconMap: Record<string, any> = {
-  "Record Room Documents": FolderOpen,
-  "Survey Documents": ClipboardList,
-  "E-katha": FileText,
-  "Property Identification Documents": MapPin,
-  "Conversion of Land": BarChart3,
-  "Change of Land": RefreshCw,
-  "Land Grants": Flag,
-  "Podi and Durasthu": Ruler,
-  "Plan Approved": CheckCircle,
-  "Amendments": Pencil,
-  "No Objection Certificate": ShieldCheck,
-  "Land Acquisitions": Handshake,
-  "Land Allotments": MapPinned,
-  "Property Bifurcation": GitBranch,
-  "Electricity Board Approvals": Zap,
-};
+const iconMap: Record<string, any> = Object.fromEntries(allServices.map((s) => [s.name, s.icon]));
 
 interface ServiceItem {
   name: string;
@@ -56,7 +49,7 @@ interface ServiceItem {
 const SelectService = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [services, setServices] = useState<{ name: string; icon: React.ComponentType<any> }[]>(fallbackServices);
+  const [services, setServices] = useState(allServices);
   const [selected, setSelected] = useState<string | null>(null);
 
   useEffect(() => {
@@ -83,7 +76,7 @@ const SelectService = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-background pb-20">
-      <PageHeader title="Select Services" />
+      <PageHeader title="Select Main Service" />
       <div className="px-4 py-4">
         <div className="grid grid-cols-3 gap-3">
           {services.map((s) => {
@@ -93,12 +86,12 @@ const SelectService = () => {
               <button
                 key={s.name}
                 onClick={() => handleSelect(s.name)}
-                className={`flex flex-col items-center justify-center gap-2 rounded-xl border bg-background p-3 min-h-[110px] transition-colors ${
-                  isSelected ? "border-2 border-primary" : "border-border"
+                className={`flex flex-col items-center justify-center gap-2 rounded-xl border bg-background p-2 min-h-[110px] w-full transition-colors ${
+                  isSelected ? "border-2 border-[hsl(217_91%_60%)]" : "border-border"
                 }`}
               >
-                <Icon size={48} className="text-primary" strokeWidth={1.5} />
-                <span className="text-xs text-foreground text-center leading-tight">{s.name}</span>
+                <Icon size={40} className="text-[hsl(217_91%_60%)]" strokeWidth={1.5} />
+                <span className="text-[11px] text-foreground text-center leading-tight">{s.name}</span>
               </button>
             );
           })}
