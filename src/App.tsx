@@ -19,6 +19,9 @@ import PropertyServices from "./pages/properties/PropertyServices";
 import SelectService from "./pages/properties/SelectService";
 import SelectSubService from "./pages/properties/SelectSubService";
 import PropertyRequests from "./pages/properties/PropertyRequests";
+import CommonDocs from "./pages/service-request/CommonDocs";
+import ServiceDocs from "./pages/service-request/ServiceDocs";
+import DocCards from "./pages/service-request/DocCards";
 import Transactions from "./pages/Transactions";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
@@ -49,7 +52,10 @@ const App = () => (
             <Route path="/properties/:id/select-service" element={<SelectService />} />
             <Route path="/properties/:id/select-sub-service" element={<SelectSubService />} />
             <Route path="/properties/:id/requests" element={<PropertyRequests />} />
-            <Route path="/service-request/:srId/common-docs" element={<NotFound />} />
+            <Route path="/service-request/:srId/common-docs" element={<CommonDocs />} />
+            <Route path="/service-request/:srId/service-docs" element={<ServiceDocs />} />
+            <Route path="/service-request/:srId/doc-cards" element={<DocCards />} />
+            <Route path="/service-request/:srId/poa" element={<NotFound />} />
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="*" element={<NotFound />} />
