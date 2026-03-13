@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Building2, Eye, Download } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import BottomTabs from "@/components/BottomTabs";
