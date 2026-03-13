@@ -115,7 +115,10 @@ const RegisterType = () => {
             <Button
               className="w-full"
               disabled={!agreed}
-              onClick={() => navigate("/register-form", { replace: true })}
+              onClick={() => {
+                if (selected) setRegistrationType(selected);
+                navigate("/register-form", { replace: true });
+              }}
             >
               Continue
             </Button>
