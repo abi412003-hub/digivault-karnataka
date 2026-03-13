@@ -47,7 +47,7 @@ const Payment = () => {
       <div className="flex-1 px-5 py-6 pb-24">
         {/* Top card */}
         <div className="rounded-xl border border-border overflow-hidden">
-          <div className="bg-blue-100 py-4 px-4 text-center">
+          <div className="bg-secondary py-4 px-4 text-center">
             <h2 className="text-lg font-bold text-foreground">Select Charges</h2>
           </div>
           <div className="bg-background p-4 space-y-3">
