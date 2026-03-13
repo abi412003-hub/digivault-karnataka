@@ -32,7 +32,7 @@ const CreateProject = () => {
         project_name: title,
         project_description: description,
         client: auth.client_id,
-        project_status: "Open",
+        project_status: "Pending",
         service: mainService,
       });
       const projectName = projRes?.data?.name || "";
