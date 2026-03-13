@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, User, Building2, Landmark, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useAuth } from "@/contexts/AuthContext";
 
 const types = [
   { key: "individual", label: "Individual", icon: User, note: "Register as an Individual for Personal use." },
@@ -12,6 +13,7 @@ const types = [
 
 const RegisterType = () => {
   const navigate = useNavigate();
+  const { setRegistrationType } = useAuth();
   const [selected, setSelected] = useState<string | null>(null);
   const [showSheet, setShowSheet] = useState(false);
   const [agreed, setAgreed] = useState(false);
@@ -113,7 +115,10 @@ const RegisterType = () => {
             <Button
               className="w-full"
               disabled={!agreed}
-              onClick={() => navigate("/register-form", { replace: true })}
+              onClick={() => {
+                if (selected) setRegistrationType(selected);
+                navigate("/register-form", { replace: true });
+              }}
             >
               Continue
             </Button>

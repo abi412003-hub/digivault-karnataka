@@ -4,6 +4,7 @@ interface AuthState {
   client_id: string;
   phone: string;
   name: string;
+  registrationType: string;
 }
 
 interface AuthContextType {
@@ -12,25 +13,30 @@ interface AuthContextType {
   isLoggedIn: boolean;
   login: (phone: string) => void;
   register: (phone: string, name: string) => void;
+  setRegistrationType: (type: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [auth, setAuth] = useState<AuthState>({ client_id: "", phone: "", name: "" });
+  const [auth, setAuth] = useState<AuthState>({ client_id: "", phone: "", name: "", registrationType: "" });
 
   const isLoggedIn = !!auth.client_id;
 
   const login = (phone: string) => {
-    setAuth({ client_id: "CL-00001", phone, name: "User" });
+    setAuth((prev) => ({ ...prev, phone }));
   };
 
   const register = (phone: string, name: string) => {
-    setAuth({ client_id: "CL-00001", phone, name });
+    setAuth((prev) => ({ ...prev, client_id: "CL-00001", phone, name }));
+  };
+
+  const setRegistrationType = (type: string) => {
+    setAuth((prev) => ({ ...prev, registrationType: type }));
   };
 
   return (
-    <AuthContext.Provider value={{ auth, setAuth, isLoggedIn, login, register }}>
+    <AuthContext.Provider value={{ auth, setAuth, isLoggedIn, login, register, setRegistrationType }}>
       {children}
     </AuthContext.Provider>
   );
