@@ -192,7 +192,7 @@ const RegisterForm = () => {
 
       const res = await createRecord("DigiVault Client", body);
       const clientId = res?.data?.name || "CL-00001";
-      setAuth((prev) => ({ ...prev, client_id: clientId, name: fullName }));
+      setAuth((prev) => ({ ...prev, client_id: clientId, name: fullName, supabaseUserId: prev.supabaseUserId || "" }));
       toast({ title: "Registration successful!" });
       navigate("/dashboard", { replace: true });
     } catch {
