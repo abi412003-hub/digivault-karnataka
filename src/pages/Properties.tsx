@@ -36,7 +36,7 @@ const Properties = () => {
     if (!auth.client_id) return;
     fetchList(
       "DigiVault Property",
-      ["name", "property_name", "sr_id", "property_type", "property_district", "property_taluk", "property_latitude", "property_longitude"],
+      ["name", "property_name", "property_type", "property_district", "property_taluk", "property_latitude", "property_longitude"],
       [["client", "=", auth.client_id]]
     )
       .then((d) => setProperties(d ?? []))

@@ -6,9 +6,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/contexts/AuthContext";
 
 const types = [
-  { key: "individual", label: "Individual", icon: User, note: "Register as an Individual for Personal use." },
-  { key: "organization", label: "Organization", icon: Building2, note: "Register as a Business or Organization." },
-  { key: "land_aggregator", label: "Land Aggregator", icon: Landmark, note: "Register as a Land Aggregator." },
+  { key: "Individual", label: "Individual", icon: User, note: "Register as an Individual for Personal use." },
+  { key: "Organization", label: "Organization", icon: Building2, note: "Register as a Business or Organization." },
+  { key: "Land Aggregator", label: "Land Aggregator", icon: Landmark, note: "Register as a Land Aggregator." },
 ];
 
 const RegisterType = () => {
