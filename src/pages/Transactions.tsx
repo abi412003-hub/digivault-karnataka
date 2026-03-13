@@ -26,12 +26,12 @@ const Transactions = () => {
     const load = async () => {
       try {
         const [gaps, invoices] = await Promise.all([
-          fetchList("DigiVault GAP Analysis", ["name", "project", "property"], [["client", "=", auth.client_id]]),
-          fetchList("DigiVault Invoice", ["name", "project", "property"], [["client", "=", auth.client_id]]),
+          fetchList("DigiVault GAP Analysis", ["name"], [["client", "=", auth.client_id]]),
+          fetchList("DigiVault Invoice", ["name"], [["client", "=", auth.client_id]]),
         ]);
         const combined: TxRow[] = [];
-        if (gaps?.length) gaps.forEach((g: any) => combined.push({ item: "GAP Analysis", project: g.project || "", property: g.property || "" }));
-        if (invoices?.length) invoices.forEach((inv: any, i: number) => combined.push({ item: `Invoice #${i + 1}`, project: inv.project || "", property: inv.property || "" }));
+        if (gaps?.length) gaps.forEach((g: any) => combined.push({ item: "GAP Analysis", project: g.name || "", property: "" }));
+        if (invoices?.length) invoices.forEach((inv: any, i: number) => combined.push({ item: `Invoice #${i + 1}`, project: inv.name || "", property: "" }));
         setRows(combined.length ? combined : PLACEHOLDER);
       } catch {
         setRows(PLACEHOLDER);
