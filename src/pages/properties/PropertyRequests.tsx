@@ -188,7 +188,12 @@ const PropertyRequests = () => {
                   i < docs.length - 1 ? "border-b border-border" : ""
                 }`}
               >
-                <span className="text-xs text-foreground pr-2">{doc.document_title}</span>
+                <button
+                  onClick={() => selectedSR && navigate(`/service-request/${selectedSR}/sub-docs/${encodeURIComponent(doc.document_title)}`)}
+                  className="text-xs text-primary underline pr-2 text-left"
+                >
+                  {doc.document_title}
+                </button>
                 <span className="flex justify-center">
                   <Badge status={doc.document_status} />
                 </span>
