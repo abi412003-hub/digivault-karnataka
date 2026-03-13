@@ -75,6 +75,7 @@ const ProgressRing = ({ percentage, size = 48 }: { percentage: number; size?: nu
 
 const PropertyRequests = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { auth } = useAuth();
   const [propertyName, setPropertyName] = useState("");
   const [requests, setRequests] = useState<ServiceReq[]>([]);
