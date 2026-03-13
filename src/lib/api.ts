@@ -52,16 +52,27 @@ export async function uploadFile(
   docname: string,
   fieldname: string
 ) {
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("doctype", doctype);
-  formData.append("docname", docname);
-  formData.append("fieldname", fieldname);
-  formData.append("is_private", "0");
+  const reader = new FileReader();
+  const base64 = await new Promise<string>((resolve, reject) => {
+    reader.onload = () => {
+      const result = reader.result as string;
+      resolve(result.split(",")[1]); // strip data:...;base64, prefix
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 
   const res = await fetch(BASE_URL + "?path=/api/method/upload_file", {
     method: "POST",
-    body: formData,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      filename: file.name,
+      filedata: base64,
+      doctype,
+      docname,
+      fieldname,
+      is_private: 0,
+    }),
   });
   return res.json();
 }
