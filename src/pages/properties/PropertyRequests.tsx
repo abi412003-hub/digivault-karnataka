@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Building2, Eye, Download } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import BottomTabs from "@/components/BottomTabs";
@@ -75,6 +75,7 @@ const ProgressRing = ({ percentage, size = 48 }: { percentage: number; size?: nu
 
 const PropertyRequests = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { auth } = useAuth();
   const [propertyName, setPropertyName] = useState("");
   const [requests, setRequests] = useState<ServiceReq[]>([]);
@@ -187,7 +188,12 @@ const PropertyRequests = () => {
                   i < docs.length - 1 ? "border-b border-border" : ""
                 }`}
               >
-                <span className="text-xs text-foreground pr-2">{doc.document_title}</span>
+                <button
+                  onClick={() => selectedSR && navigate(`/service-request/${selectedSR}/sub-docs/${encodeURIComponent(doc.document_title)}`)}
+                  className="text-xs text-primary underline pr-2 text-left"
+                >
+                  {doc.document_title}
+                </button>
                 <span className="flex justify-center">
                   <Badge status={doc.document_status} />
                 </span>

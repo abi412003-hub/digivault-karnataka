@@ -25,6 +25,7 @@ import DocCards from "./pages/service-request/DocCards";
 import POA from "./pages/service-request/POA";
 import ESign from "./pages/service-request/ESign";
 import VideoVerify from "./pages/service-request/VideoVerify";
+import SubDocs from "./pages/service-request/SubDocs";
 import Payment from "./pages/service-request/Payment";
 import Transactions from "./pages/Transactions";
 import DocumentListPage from "./pages/DocumentListPage";
@@ -63,6 +64,7 @@ const App = () => (
             <Route path="/service-request/:srId/poa" element={<POA />} />
             <Route path="/service-request/:srId/esign" element={<ESign />} />
             <Route path="/service-request/:srId/video-verify" element={<VideoVerify />} />
+            <Route path="/service-request/:srId/sub-docs/:docName" element={<SubDocs />} />
             <Route path="/service-request/:srId/payment" element={<Payment />} />
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/proposals" element={<DocumentListPage />} />
