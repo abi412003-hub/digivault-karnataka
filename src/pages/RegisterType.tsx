@@ -13,6 +13,7 @@ const types = [
 
 const RegisterType = () => {
   const navigate = useNavigate();
+  const { setRegistrationType } = useAuth();
   const [selected, setSelected] = useState<string | null>(null);
   const [showSheet, setShowSheet] = useState(false);
   const [agreed, setAgreed] = useState(false);
