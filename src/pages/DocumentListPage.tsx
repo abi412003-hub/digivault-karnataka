@@ -31,7 +31,7 @@ const DocumentListPage = () => {
   const [items, setItems] = useState<any[]>([]);
 
   useEffect(() => {
-    fetchList(config.doctype, ["name", "status"], [["client", "=", auth.client_id]])
+    fetchList(config.doctype, ["name"], [["client", "=", auth.client_id]])
       .then((data) => setItems(data?.length ? data : []))
       .catch(() => setItems([]));
   }, [config.doctype, auth.client_id]);
