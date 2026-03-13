@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   User,
@@ -11,10 +11,11 @@ import {
   Smartphone,
   HelpCircle,
   LogOut,
+  Camera,
 } from "lucide-react";
 import BottomTabs from "@/components/BottomTabs";
 import { useAuth } from "@/contexts/AuthContext";
-import { fetchOne } from "@/lib/api";
+import { fetchOne, uploadFile, updateRecord } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog,

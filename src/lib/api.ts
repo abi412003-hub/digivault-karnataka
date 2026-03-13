@@ -45,3 +45,23 @@ export async function updateRecord(doctype: string, name: string, body: Record<s
   );
   return res.json();
 }
+
+export async function uploadFile(
+  file: File,
+  doctype: string,
+  docname: string,
+  fieldname: string
+) {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("doctype", doctype);
+  formData.append("docname", docname);
+  formData.append("fieldname", fieldname);
+  formData.append("is_private", "0");
+
+  const res = await fetch(BASE_URL + "?path=/api/method/upload_file", {
+    method: "POST",
+    body: formData,
+  });
+  return res.json();
+}
