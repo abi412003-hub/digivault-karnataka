@@ -58,7 +58,10 @@ const App = () => (
             <Route path="/service-request/:srId/common-docs" element={<CommonDocs />} />
             <Route path="/service-request/:srId/service-docs" element={<ServiceDocs />} />
             <Route path="/service-request/:srId/doc-cards" element={<DocCards />} />
-            <Route path="/service-request/:srId/poa" element={<NotFound />} />
+            <Route path="/service-request/:srId/poa" element={<POA />} />
+            <Route path="/service-request/:srId/esign" element={<ESign />} />
+            <Route path="/service-request/:srId/video-verify" element={<VideoVerify />} />
+            <Route path="/service-request/:srId/payment" element={<NotFound />} />
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="*" element={<NotFound />} />
