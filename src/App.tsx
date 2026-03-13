@@ -22,6 +22,9 @@ import PropertyRequests from "./pages/properties/PropertyRequests";
 import CommonDocs from "./pages/service-request/CommonDocs";
 import ServiceDocs from "./pages/service-request/ServiceDocs";
 import DocCards from "./pages/service-request/DocCards";
+import POA from "./pages/service-request/POA";
+import ESign from "./pages/service-request/ESign";
+import VideoVerify from "./pages/service-request/VideoVerify";
 import Transactions from "./pages/Transactions";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
@@ -55,7 +58,10 @@ const App = () => (
             <Route path="/service-request/:srId/common-docs" element={<CommonDocs />} />
             <Route path="/service-request/:srId/service-docs" element={<ServiceDocs />} />
             <Route path="/service-request/:srId/doc-cards" element={<DocCards />} />
-            <Route path="/service-request/:srId/poa" element={<NotFound />} />
+            <Route path="/service-request/:srId/poa" element={<POA />} />
+            <Route path="/service-request/:srId/esign" element={<ESign />} />
+            <Route path="/service-request/:srId/video-verify" element={<VideoVerify />} />
+            <Route path="/service-request/:srId/payment" element={<NotFound />} />
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="*" element={<NotFound />} />
