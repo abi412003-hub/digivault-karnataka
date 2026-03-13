@@ -17,6 +17,8 @@ import PropertyPhotos from "./pages/properties/PropertyPhotos";
 import PropertyDetails from "./pages/properties/PropertyDetails";
 import PropertyServices from "./pages/properties/PropertyServices";
 import SelectService from "./pages/properties/SelectService";
+import SelectSubService from "./pages/properties/SelectSubService";
+import PropertyRequests from "./pages/properties/PropertyRequests";
 import Transactions from "./pages/Transactions";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
@@ -45,7 +47,9 @@ const App = () => (
             <Route path="/properties/:id/details" element={<PropertyDetails />} />
             <Route path="/properties/:id/services" element={<PropertyServices />} />
             <Route path="/properties/:id/select-service" element={<SelectService />} />
-            <Route path="/properties/:id/requests" element={<SelectService />} />
+            <Route path="/properties/:id/select-sub-service" element={<SelectSubService />} />
+            <Route path="/properties/:id/requests" element={<PropertyRequests />} />
+            <Route path="/service-request/:srId/common-docs" element={<NotFound />} />
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="*" element={<NotFound />} />
