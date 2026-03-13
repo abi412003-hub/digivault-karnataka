@@ -27,7 +27,8 @@ const fallbackServices = [
   { name: "Electricity Board Approvals", icon: Zap },
 ];
 
-const iconMap: Record<string, React.ComponentType<{ size?: number; className?: string; strokeWidth?: number }>> = {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const iconMap: Record<string, any> = {
   "Record Room Documents": FolderOpen,
   "Survey Documents": ClipboardList,
   "E-katha": FileText,
