@@ -10,6 +10,7 @@ const Payment = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [accepted, setAccepted] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [sr, setSr] = useState<any>(null);
 
   useEffect(() => {
@@ -47,19 +48,21 @@ const Payment = () => {
       <div className="flex-1 px-5 py-6 pb-24">
         {/* Top card */}
         <div className="rounded-xl border border-border overflow-hidden">
-          <div className="bg-secondary py-4 px-4 text-center">
-            <h2 className="text-lg font-bold text-foreground">Select Charges</h2>
+          <div className="py-4 px-4 text-center">
+            <span className="px-5 py-2 rounded-full bg-[hsl(217_91%_93%)] text-[hsl(217_91%_53%)] text-sm font-semibold">
+              Select Charges
+            </span>
           </div>
           <div className="bg-background p-4 space-y-3">
-            <Row label="Project ID" value={sr?.project || "PR-784516"} />
-            <Row label="Property Title" value={sr?.property_title || sr?.property || "Ashwin Villa"} />
-            <Row label="Main Service" value={sr?.main_service || "E-katha"} />
-            <Row label="Sub Service" value={sr?.sub_service || "New E-Katha Registration"} />
+            <Row label="Project ID" value={sr?.project || "-"} />
+            <Row label="Property Title" value={sr?.property_title || sr?.property || "-"} />
+            <Row label="Main Service" value={sr?.main_service || "-"} />
+            <Row label="Sub Service" value={sr?.sub_service || "-"} />
           </div>
         </div>
 
         {/* Charge button */}
-        <button className="w-full mt-6 h-14 rounded-xl bg-primary text-primary-foreground font-bold text-base">
+        <button className="w-full mt-6 h-14 rounded-xl bg-[hsl(217_91%_53%)] text-white font-bold text-base">
           Basic Investigation / Legal Charges
         </button>
 
@@ -82,11 +85,11 @@ const Payment = () => {
         {/* Action button */}
         <div className="flex justify-center mt-6">
           {!accepted ? (
-            <button className="px-8 py-3 rounded-lg border-2 border-primary text-primary font-semibold bg-background" style={{ width: "60%" }}>
+            <button className="px-8 py-3 rounded-lg border-2 border-[hsl(217_91%_53%)] text-[hsl(217_91%_53%)] font-semibold bg-background" style={{ width: "60%" }}>
               Generate Payment
             </button>
           ) : (
-            <button onClick={handlePay} className="px-8 py-3 rounded-lg bg-primary text-primary-foreground font-semibold" style={{ width: "40%" }}>
+            <button onClick={handlePay} className="px-8 py-3 rounded-lg bg-[hsl(217_91%_53%)] text-white font-semibold" style={{ width: "40%" }}>
               Pay Now
             </button>
           )}

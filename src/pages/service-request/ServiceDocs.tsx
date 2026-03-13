@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, ArrowUpFromLine } from "lucide-react";
+import { ArrowLeft, ArrowUpFromLine, Eye, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { createRecord } from "@/lib/api";
@@ -53,6 +53,14 @@ const ServiceDocs = () => {
     });
   };
 
+  const removeFile = (idx: number) => {
+    setDocs((prev) => {
+      const next = [...prev];
+      next[idx] = { ...next[idx], file: null };
+      return next;
+    });
+  };
+
   const saveDocuments = async (andSubmit: boolean) => {
     setSaving(true);
     const today = new Date().toISOString().split("T")[0];
@@ -93,27 +101,42 @@ const ServiceDocs = () => {
         <h1 className="flex-1 text-center text-lg font-bold text-foreground pr-11">Service Documents</h1>
       </div>
 
+      {/* Sub service pill */}
+      <div className="px-4 pt-4 flex justify-center">
+        <span className="px-4 py-1.5 rounded-full bg-[hsl(217_91%_93%)] text-[hsl(217_91%_53%)] text-xs font-semibold">
+          Required Documents
+        </span>
+      </div>
+
       <div className="flex-1 overflow-y-auto px-4 py-5 pb-28 space-y-5">
         {docs.map((doc, idx) => (
           <div key={doc.label} className="space-y-1.5">
             <label className="text-sm font-bold text-primary">{doc.label}</label>
             <div className="flex gap-2 items-center">
               {/* filename display */}
-              <div className="flex-1 rounded-lg bg-muted px-3 py-2.5 text-sm text-muted-foreground truncate min-h-[44px] flex items-center">
-                {doc.file ? doc.file.name : doc.isNA ? "N/A" : "No file selected"}
+              <div className="flex-1 rounded-lg bg-muted px-3 py-2.5 text-sm text-muted-foreground truncate min-h-[44px] flex items-center gap-2">
+                <span className="truncate flex-1">
+                  {doc.file ? doc.file.name : doc.isNA ? "Not Available" : "No file selected"}
+                </span>
+                {doc.file && (
+                  <span className="flex items-center gap-1 flex-shrink-0">
+                    <Eye size={16} className="text-primary cursor-pointer" />
+                    <Trash2 size={16} className="text-destructive cursor-pointer" onClick={() => removeFile(idx)} />
+                  </span>
+                )}
               </div>
 
               {/* NA button */}
               <button
                 onClick={() => toggleNA(idx)}
                 disabled={!!doc.file}
-                className={`w-11 h-11 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 transition-colors ${
+                className={`h-11 px-2.5 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 transition-colors ${
                   doc.isNA
-                    ? "bg-primary text-primary-foreground"
+                    ? "bg-[hsl(217_91%_53%)] text-white"
                     : "bg-muted text-muted-foreground"
                 } ${doc.file ? "opacity-40 cursor-not-allowed" : ""}`}
               >
-                NA
+                Not Available
               </button>
 
               {/* upload button */}
