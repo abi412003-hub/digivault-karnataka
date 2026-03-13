@@ -11,6 +11,12 @@ import RegisterType from "./pages/RegisterType";
 import RegisterForm from "./pages/RegisterForm";
 import Dashboard from "./pages/Dashboard";
 import Properties from "./pages/Properties";
+import AddProperty from "./pages/properties/AddProperty";
+import PropertyLocation from "./pages/properties/PropertyLocation";
+import PropertyPhotos from "./pages/properties/PropertyPhotos";
+import PropertyDetails from "./pages/properties/PropertyDetails";
+import PropertyServices from "./pages/properties/PropertyServices";
+import SelectService from "./pages/properties/SelectService";
 import Transactions from "./pages/Transactions";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
@@ -33,6 +39,13 @@ const App = () => (
             <Route path="/register-form" element={<RegisterForm />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/properties" element={<Properties />} />
+            <Route path="/properties/add" element={<AddProperty />} />
+            <Route path="/properties/:id/location" element={<PropertyLocation />} />
+            <Route path="/properties/:id/photos" element={<PropertyPhotos />} />
+            <Route path="/properties/:id/details" element={<PropertyDetails />} />
+            <Route path="/properties/:id/services" element={<PropertyServices />} />
+            <Route path="/properties/:id/select-service" element={<SelectService />} />
+            <Route path="/properties/:id/requests" element={<SelectService />} />
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="*" element={<NotFound />} />
