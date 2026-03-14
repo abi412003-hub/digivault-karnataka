@@ -11,6 +11,7 @@ import {
   Landmark,
   FileText,
   RefreshCw,
+  AlertTriangle,
 } from "lucide-react";
 import BottomTabs from "@/components/BottomTabs";
 import { useAuth } from "@/contexts/AuthContext";
