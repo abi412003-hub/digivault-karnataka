@@ -19,19 +19,18 @@ const BottomTabs = () => {
   const [unread, setUnread] = useState(0);
 
   useEffect(() => {
-    if (!auth.client_id) return;
+    // BD perspective: unread = non-BD messages
     fetchList(
       "DigiVault Message",
       ["name"],
       [
-        ["client", "=", auth.client_id],
         ["is_read", "=", 0],
-        ["sender_role", "!=", "Client"],
+        ["sender_role", "!=", "BD"],
       ]
     )
       .then((data: any[]) => setUnread(data?.length ?? 0))
       .catch(() => {});
-  }, [auth.client_id, location.pathname]);
+  }, [location.pathname]);
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50">
