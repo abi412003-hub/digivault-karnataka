@@ -33,6 +33,7 @@ import ESign from "./pages/service-request/ESign";
 import VideoVerify from "./pages/service-request/VideoVerify";
 import SubDocs from "./pages/service-request/SubDocs";
 import Payment from "./pages/service-request/Payment";
+import ServiceTracker from "./pages/ServiceTracker";
 import Transactions from "./pages/Transactions";
 import DocumentListPage from "./pages/DocumentListPage";
 import SettingsPage from "./pages/SettingsPage";
