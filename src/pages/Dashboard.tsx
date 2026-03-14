@@ -195,8 +195,39 @@ const Dashboard = () => {
             <span className="text-2xl font-bold text-[hsl(263_70%_50%)]">{projects}</span>
           </button>
         </section>
+        {/* ── GAP Alert ── */}
+        {(gapStatus === "Pending" || gapStatus === "Rejected") && (
+          <section>
+            <button
+              onClick={() => navigate("/gap-documents")}
+              className={`w-full rounded-xl px-4 py-3 flex items-center gap-3 ${
+                gapStatus === "Rejected"
+                  ? "bg-[hsl(0_93%_94%)]"
+                  : "bg-[hsl(48_96%_89%)]"
+              }`}
+            >
+              <AlertTriangle
+                size={20}
+                className={gapStatus === "Rejected" ? "text-[hsl(0_72%_51%)]" : "text-[hsl(38_92%_50%)]"}
+              />
+              <span
+                className={`flex-1 text-left text-sm font-medium ${
+                  gapStatus === "Rejected" ? "text-[hsl(0_72%_51%)]" : "text-[hsl(38_92%_50%)]"
+                }`}
+              >
+                {gapStatus === "Rejected"
+                  ? "Documents need re-upload"
+                  : "Documents under review"}
+              </span>
+              {gapIssueCount > 0 && (
+                <span className="w-6 h-6 rounded-full bg-destructive text-destructive-foreground text-xs font-bold flex items-center justify-center">
+                  {gapIssueCount}
+                </span>
+              )}
+            </button>
+          </section>
+        )}
 
-        {/* ── Quick Actions ── */}
         <section className="grid grid-cols-2 gap-3">
           {[
             { label: "Orders", path: "/orders" },
