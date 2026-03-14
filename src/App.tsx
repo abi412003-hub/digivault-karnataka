@@ -37,6 +37,8 @@ import ServiceTracker from "./pages/ServiceTracker";
 import Transactions from "./pages/Transactions";
 import PaymentHistory from "./pages/PaymentHistory";
 import GapDocuments from "./pages/GapDocuments";
+import MessagesList from "./pages/MessagesList";
+import MessageThread from "./pages/MessageThread";
 import DocumentListPage from "./pages/DocumentListPage";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
