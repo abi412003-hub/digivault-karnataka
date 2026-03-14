@@ -36,6 +36,7 @@ import Payment from "./pages/service-request/Payment";
 import ServiceTracker from "./pages/ServiceTracker";
 import Transactions from "./pages/Transactions";
 import PaymentHistory from "./pages/PaymentHistory";
+import GapDocuments from "./pages/GapDocuments";
 import DocumentListPage from "./pages/DocumentListPage";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
@@ -83,6 +84,7 @@ const App = () => (
             <Route path="/service-request/:srId/track" element={<ServiceTracker />} />
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/payments" element={<PaymentHistory />} />
+            <Route path="/gap-documents" element={<GapDocuments />} />
             <Route path="/proposals" element={<DocumentListPage />} />
             <Route path="/estimates" element={<DocumentListPage />} />
             <Route path="/invoices" element={<DocumentListPage />} />

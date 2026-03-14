@@ -11,6 +11,7 @@ import {
   Landmark,
   FileText,
   RefreshCw,
+  AlertTriangle,
 } from "lucide-react";
 import BottomTabs from "@/components/BottomTabs";
 import { useAuth } from "@/contexts/AuthContext";
@@ -49,6 +50,8 @@ const Dashboard = () => {
   const [activity, setActivity] = useState(fallbackActivity);
   const [loading, setLoading] = useState(true);
   const [photoUrl, setPhotoUrl] = useState("");
+  const [gapIssueCount, setGapIssueCount] = useState(0);
+  const [gapStatus, setGapStatus] = useState("");
 
   useEffect(() => {
     if (clientId) {
@@ -66,18 +69,32 @@ const Dashboard = () => {
     if (!clientId) return;
     const load = async () => {
       try {
-        const [compRes, onRes, penRes, projRes, actRes] = await Promise.allSettled([
+        const [compRes, onRes, penRes, projRes, actRes, gapRes] = await Promise.allSettled([
           fetchList("DigiVault Service Request", ["name"], [["client", "=", clientId], ["request_status", "=", "Completed"]]),
           fetchList("DigiVault Service Request", ["name"], [["client", "=", clientId], ["request_status", "=", "In Progress"]]),
           fetchList("DigiVault Service Request", ["name"], [["client", "=", clientId], ["request_status", "in", ["Draft", "Documents Pending", "Under Review", "Payment Pending"]]]),
           fetchList("DigiVault Project", ["name"], [["client", "=", clientId]]),
           fetchList("DigiVault Client Document", ["name", "document_title", "document_date", "document_status"], [["client", "=", clientId]], 10, "creation desc"),
+          fetchList("DigiVault GAP Analysis", ["name", "gap_status"], [["client", "=", clientId]], 1, "creation desc"),
         ]);
         if (compRes.status === "fulfilled") setCompleted(compRes.value?.length ?? 0);
         if (onRes.status === "fulfilled") setOngoing(onRes.value?.length ?? 0);
         if (penRes.status === "fulfilled") setPending(penRes.value?.length ?? 0);
         if (projRes.status === "fulfilled") setProjects(projRes.value?.length ?? 0);
         if (actRes.status === "fulfilled" && actRes.value?.length) setActivity(actRes.value);
+        if (gapRes.status === "fulfilled" && gapRes.value?.length) {
+          const g = gapRes.value[0];
+          setGapStatus(g.gap_status || "");
+          if (g.gap_status === "Pending" || g.gap_status === "Rejected") {
+            try {
+              const full = await fetchOne("DigiVault GAP Analysis", g.name);
+              const issues = (full?.gap_files || []).filter(
+                (f: any) => f.file_status === "Missing" || f.file_status === "Rejected"
+              ).length;
+              setGapIssueCount(issues);
+            } catch { /* silent */ }
+          }
+        }
       } catch {
         // keep defaults
       } finally {
@@ -178,8 +195,39 @@ const Dashboard = () => {
             <span className="text-2xl font-bold text-[hsl(263_70%_50%)]">{projects}</span>
           </button>
         </section>
+        {/* ── GAP Alert ── */}
+        {(gapStatus === "Pending" || gapStatus === "Rejected") && (
+          <section>
+            <button
+              onClick={() => navigate("/gap-documents")}
+              className={`w-full rounded-xl px-4 py-3 flex items-center gap-3 ${
+                gapStatus === "Rejected"
+                  ? "bg-[hsl(0_93%_94%)]"
+                  : "bg-[hsl(48_96%_89%)]"
+              }`}
+            >
+              <AlertTriangle
+                size={20}
+                className={gapStatus === "Rejected" ? "text-[hsl(0_72%_51%)]" : "text-[hsl(38_92%_50%)]"}
+              />
+              <span
+                className={`flex-1 text-left text-sm font-medium ${
+                  gapStatus === "Rejected" ? "text-[hsl(0_72%_51%)]" : "text-[hsl(38_92%_50%)]"
+                }`}
+              >
+                {gapStatus === "Rejected"
+                  ? "Documents need re-upload"
+                  : "Documents under review"}
+              </span>
+              {gapIssueCount > 0 && (
+                <span className="w-6 h-6 rounded-full bg-destructive text-destructive-foreground text-xs font-bold flex items-center justify-center">
+                  {gapIssueCount}
+                </span>
+              )}
+            </button>
+          </section>
+        )}
 
-        {/* ── Quick Actions ── */}
         <section className="grid grid-cols-2 gap-3">
           {[
             { label: "Orders", path: "/orders" },
