@@ -69,18 +69,32 @@ const Dashboard = () => {
     if (!clientId) return;
     const load = async () => {
       try {
-        const [compRes, onRes, penRes, projRes, actRes] = await Promise.allSettled([
+        const [compRes, onRes, penRes, projRes, actRes, gapRes] = await Promise.allSettled([
           fetchList("DigiVault Service Request", ["name"], [["client", "=", clientId], ["request_status", "=", "Completed"]]),
           fetchList("DigiVault Service Request", ["name"], [["client", "=", clientId], ["request_status", "=", "In Progress"]]),
           fetchList("DigiVault Service Request", ["name"], [["client", "=", clientId], ["request_status", "in", ["Draft", "Documents Pending", "Under Review", "Payment Pending"]]]),
           fetchList("DigiVault Project", ["name"], [["client", "=", clientId]]),
           fetchList("DigiVault Client Document", ["name", "document_title", "document_date", "document_status"], [["client", "=", clientId]], 10, "creation desc"),
+          fetchList("DigiVault GAP Analysis", ["name", "gap_status"], [["client", "=", clientId]], 1, "creation desc"),
         ]);
         if (compRes.status === "fulfilled") setCompleted(compRes.value?.length ?? 0);
         if (onRes.status === "fulfilled") setOngoing(onRes.value?.length ?? 0);
         if (penRes.status === "fulfilled") setPending(penRes.value?.length ?? 0);
         if (projRes.status === "fulfilled") setProjects(projRes.value?.length ?? 0);
         if (actRes.status === "fulfilled" && actRes.value?.length) setActivity(actRes.value);
+        if (gapRes.status === "fulfilled" && gapRes.value?.length) {
+          const g = gapRes.value[0];
+          setGapStatus(g.gap_status || "");
+          if (g.gap_status === "Pending" || g.gap_status === "Rejected") {
+            try {
+              const full = await fetchOne("DigiVault GAP Analysis", g.name);
+              const issues = (full?.gap_files || []).filter(
+                (f: any) => f.file_status === "Missing" || f.file_status === "Rejected"
+              ).length;
+              setGapIssueCount(issues);
+            } catch { /* silent */ }
+          }
+        }
       } catch {
         // keep defaults
       } finally {
