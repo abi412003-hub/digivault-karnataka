@@ -50,6 +50,8 @@ const Dashboard = () => {
   const [activity, setActivity] = useState(fallbackActivity);
   const [loading, setLoading] = useState(true);
   const [photoUrl, setPhotoUrl] = useState("");
+  const [gapIssueCount, setGapIssueCount] = useState(0);
+  const [gapStatus, setGapStatus] = useState("");
 
   useEffect(() => {
     if (clientId) {
