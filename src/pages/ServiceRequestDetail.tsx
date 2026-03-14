@@ -61,10 +61,17 @@ const ServiceRequestDetail = () => {
         )}
 
         {sr && (
-          <div className="flex justify-center">
+          <div className="flex justify-center gap-3">
+            <Button
+              onClick={() => navigate(`/service-request/${encodeURIComponent(srId!)}/track`)}
+              variant="outline"
+              className="w-[140px] border-primary text-primary"
+            >
+              Track
+            </Button>
             <Button
               onClick={() => navigate(`/service-request/${encodeURIComponent(srId!)}/payment`)}
-              className="w-[160px] bg-[hsl(217_91%_53%)] hover:bg-[hsl(217_91%_45%)] text-white"
+              className="w-[140px] bg-[hsl(217_91%_53%)] hover:bg-[hsl(217_91%_45%)] text-white"
             >
               Pay Now
             </Button>
