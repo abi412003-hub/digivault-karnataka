@@ -33,6 +33,7 @@ import ESign from "./pages/service-request/ESign";
 import VideoVerify from "./pages/service-request/VideoVerify";
 import SubDocs from "./pages/service-request/SubDocs";
 import Payment from "./pages/service-request/Payment";
+import ServiceTracker from "./pages/ServiceTracker";
 import Transactions from "./pages/Transactions";
 import DocumentListPage from "./pages/DocumentListPage";
 import SettingsPage from "./pages/SettingsPage";
@@ -78,6 +79,7 @@ const App = () => (
             <Route path="/service-request/:srId/video-verify" element={<VideoVerify />} />
             <Route path="/service-request/:srId/sub-docs/:docName" element={<SubDocs />} />
             <Route path="/service-request/:srId/payment" element={<Payment />} />
+            <Route path="/service-request/:srId/track" element={<ServiceTracker />} />
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/proposals" element={<DocumentListPage />} />
             <Route path="/estimates" element={<DocumentListPage />} />

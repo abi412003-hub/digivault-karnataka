@@ -67,12 +67,20 @@ const Orders = () => {
               <p className="text-xs text-muted-foreground">Date : {fmtDate(sr.request_date)}</p>
               <p className="text-xs text-muted-foreground">Status : {sr.request_status || "On Going"}</p>
             </div>
-            <button
-              onClick={() => navigate(`/service-request/${encodeURIComponent(sr.name)}/detail`)}
-              className="text-[hsl(217_91%_53%)] text-sm font-semibold self-end"
-            >
-              View
-            </button>
+            <div className="flex flex-col gap-1.5 self-end">
+              <button
+                onClick={() => navigate(`/service-request/${encodeURIComponent(sr.name)}/detail`)}
+                className="text-[hsl(217_91%_53%)] text-sm font-semibold"
+              >
+                View
+              </button>
+              <button
+                onClick={() => navigate(`/service-request/${encodeURIComponent(sr.name)}/track`)}
+                className="text-[hsl(var(--success))] text-xs font-semibold"
+              >
+                Track
+              </button>
+            </div>
           </div>
         ))}
       </div>
