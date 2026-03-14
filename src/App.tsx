@@ -82,6 +82,7 @@ const App = () => (
             <Route path="/service-request/:srId/payment" element={<Payment />} />
             <Route path="/service-request/:srId/track" element={<ServiceTracker />} />
             <Route path="/transactions" element={<Transactions />} />
+            <Route path="/payments" element={<PaymentHistory />} />
             <Route path="/proposals" element={<DocumentListPage />} />
             <Route path="/estimates" element={<DocumentListPage />} />
             <Route path="/invoices" element={<DocumentListPage />} />

@@ -183,6 +183,7 @@ const Dashboard = () => {
         <section className="grid grid-cols-2 gap-3">
           {[
             { label: "Orders", path: "/orders" },
+            { label: "Payments", path: "/payments" },
             { label: "Proposals", path: "/proposals" },
             { label: "Estimate", path: "/estimates" },
             { label: "Invoice", path: "/invoices" },
