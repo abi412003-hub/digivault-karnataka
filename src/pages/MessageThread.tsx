@@ -106,7 +106,7 @@ const MessageThread = () => {
 
         /* Compute participants */
         const allMsgs = since ? [...messages, ...data] : data;
-        const roles = [...new Set(allMsgs.map((m: Message) => m.sender_role))].filter(Boolean);
+        const roles = [...new Set(allMsgs.map((m: Message) => m.sender_role))].filter(Boolean) as string[];
         setParticipants(roles);
 
         /* Mark non-BD messages as read */
