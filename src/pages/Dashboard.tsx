@@ -4,38 +4,21 @@ import {
   Bell,
   MessageSquare,
   User,
-  Users,
-  ListTodo,
-  FileText,
-  TrendingUp,
-  ChevronRight,
-  RefreshCw,
-  PlayCircle,
-  BookOpen,
   BarChart3,
-  Video,
-  MapPin,
+  CheckCircle,
+  Hourglass,
+  Clock,
+  Landmark,
+  FileText,
+  RefreshCw,
+  AlertTriangle,
 } from "lucide-react";
 import BottomTabs from "@/components/BottomTabs";
 import { useAuth } from "@/contexts/AuthContext";
-import { fetchList, getFileUrl } from "@/lib/api";
-import { format, parseISO, startOfMonth, endOfMonth, subMonths } from "date-fns";
+import { fetchList, fetchOne, getFileUrl } from "@/lib/api";
+import { format, parseISO } from "date-fns";
 
-/* ── helpers ── */
-const fmtCurrency = (n: number) =>
-  "Rs. " + n.toLocaleString("en-IN", { maximumFractionDigits: 0 });
-
-const fmtDate = (d: string) => {
-  try { return format(parseISO(d), "dd MMM yyyy"); } catch { return d; }
-};
-
-const daysSince = (d: string) => {
-  try {
-    return Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
-  } catch { return 0; }
-};
-
-/* ── status badge ── */
+/* ── status badge colors ── */
 const statusStyles: Record<string, { bg: string; text: string }> = {
   Completed: { bg: "bg-[hsl(142_76%_90%)]", text: "text-[hsl(142_76%_36%)]" },
   "On Going": { bg: "bg-[hsl(217_91%_93%)]", text: "text-[hsl(224_76%_48%)]" },
@@ -46,145 +29,97 @@ const statusStyles: Record<string, { bg: string; text: string }> = {
   Rejected: { bg: "bg-[hsl(0_93%_94%)]", text: "text-[hsl(0_72%_51%)]" },
 };
 
-const Badge = ({ status }: { status: string }) => {
-  const s = statusStyles[status] ?? statusStyles.Pending;
-  return (
-    <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${s.bg} ${s.text}`}>
-      {status}
-    </span>
-  );
-};
-
 const fallbackActivity = [
   { name: "DOC-001", document_title: "E-khatha Certificate", document_date: "2025-04-08", document_status: "Completed" },
   { name: "DOC-002", document_title: "Khatha Certificate", document_date: "2025-04-06", document_status: "On Going" },
   { name: "DOC-003", document_title: "Khatha Extract", document_date: "2025-04-05", document_status: "Pending" },
+  { name: "DOC-004", document_title: "Tax Paid Receipt", document_date: "2025-04-05", document_status: "Pending" },
+  { name: "DOC-005", document_title: "Building Plan Approval", document_date: "2025-04-05", document_status: "Pending" },
+  { name: "DOC-006", document_title: "Assessment Book", document_date: "2025-04-05", document_status: "Pending" },
 ];
 
 const Dashboard = () => {
   const { auth } = useAuth();
   const navigate = useNavigate();
+  const clientId = auth.client_id;
 
-  /* BD identity — try localStorage first, fall back to auth context */
-  const bdUser = (() => {
-    try {
-      const stored = localStorage.getItem("edv_bd_user");
-      if (stored) return JSON.parse(stored);
-    } catch {}
-    return null;
-  })();
-  const bdName = bdUser?.full_name || bdUser?.bd_name || auth.name || "BD User";
-  const bdId = bdUser?.name || bdUser?.bd_id || auth.client_id || "";
-
-  /* ── state ── */
-  const [loading, setLoading] = useState(true);
-  const [newLeads, setNewLeads] = useState(0);
-  const [tasksDue, setTasksDue] = useState(0);
-  const [pendingProposals, setPendingProposals] = useState(0);
-
-  // funnel
-  const [totalLeads, setTotalLeads] = useState(0);
-  const [verifiedLeads, setVerifiedLeads] = useState(0);
-  const [totalClients, setTotalClients] = useState(0);
-  const [proposalsSent, setProposalsSent] = useState(0);
-  const [paidInvoices, setPaidInvoices] = useState(0);
-
-  // revenue
-  const [revenueThisMonth, setRevenueThisMonth] = useState(0);
-  const [revenueLastMonth, setRevenueLastMonth] = useState(0);
-
-  // pipeline
-  const [pipeline, setPipeline] = useState<any[]>([]);
-
-  // activity
+  const [completed, setCompleted] = useState(0);
+  const [ongoing, setOngoing] = useState(0);
+  const [pending, setPending] = useState(0);
+  const [projects, setProjects] = useState(0);
   const [activity, setActivity] = useState(fallbackActivity);
-
-  const today = format(new Date(), "yyyy-MM-dd");
-  const thisMonthStart = format(startOfMonth(new Date()), "yyyy-MM-dd");
-  const thisMonthEnd = format(endOfMonth(new Date()), "yyyy-MM-dd");
-  const lastMonthStart = format(startOfMonth(subMonths(new Date(), 1)), "yyyy-MM-dd");
-  const lastMonthEnd = format(endOfMonth(subMonths(new Date(), 1)), "yyyy-MM-dd");
+  const [loading, setLoading] = useState(true);
+  const [photoUrl, setPhotoUrl] = useState("");
+  const [gapIssueCount, setGapIssueCount] = useState(0);
+  const [gapStatus, setGapStatus] = useState("");
 
   useEffect(() => {
+    if (clientId) {
+      fetchOne("DigiVault Client", clientId)
+        .then((data: any) => {
+          if (data?.client_photo) {
+            setPhotoUrl(getFileUrl(data.client_photo));
+          }
+        })
+        .catch(() => {});
+    }
+  }, [clientId]);
+
+  useEffect(() => {
+    if (!clientId) return;
     const load = async () => {
       try {
-        const [
-          leadsToday,
-          tasks,
-          proposals,
-          allLeads,
-          verified,
-          clients,
-          sentProposals,
-          paid,
-          paymentsThis,
-          paymentsLast,
-          projects,
-          docs,
-        ] = await Promise.allSettled([
-          // Section 1 — today's stats
-          fetchList("DigiVault Lead", ["name"], [["creation", ">=", today]], 0),
-          fetchList("DigiVault Task", ["name"], [["assigned_to", "=", bdId], ["task_status", "in", ["Not Started", "On Going"]]], 0),
-          fetchList("DigiVault Proposal", ["name"], [["proposal_status", "=", "Pending"]], 0),
-          // Section 2 — funnel
-          fetchList("DigiVault Lead", ["name"], [], 0),
-          fetchList("DigiVault Lead", ["name"], [["lead_status", "=", "Verified"]], 0),
-          fetchList("DigiVault Client", ["name"], [], 0),
-          fetchList("DigiVault Proposal", ["name"], [["proposal_status", "!=", "Draft"]], 0),
-          fetchList("DigiVault Invoice", ["name"], [["invoice_status", "=", "Paid"]], 0),
-          // Section 3 — revenue
-          fetchList("DigiVault Payment", ["amount"], [["payment_date", ">=", thisMonthStart], ["payment_date", "<=", thisMonthEnd], ["payment_status", "=", "Received"]], 0),
-          fetchList("DigiVault Payment", ["amount"], [["payment_date", ">=", lastMonthStart], ["payment_date", "<=", lastMonthEnd], ["payment_status", "=", "Received"]], 0),
-          // Section 4 — pipeline
-          fetchList("DigiVault Project", ["name", "project_name", "client", "service", "creation"], [["assigned_bd", "=", bdId], ["project_status", "=", "In Progress"]], 10, "creation desc"),
-          // Section 5 — recent activity
-          fetchList("DigiVault Client Document", ["name", "document_title", "document_date", "document_status"], [], 6, "creation desc"),
+        const [compRes, onRes, penRes, projRes, actRes, gapRes] = await Promise.allSettled([
+          fetchList("DigiVault Service Request", ["name"], [["client", "=", clientId], ["request_status", "=", "Completed"]]),
+          fetchList("DigiVault Service Request", ["name"], [["client", "=", clientId], ["request_status", "=", "In Progress"]]),
+          fetchList("DigiVault Service Request", ["name"], [["client", "=", clientId], ["request_status", "in", ["Draft", "Documents Pending", "Under Review", "Payment Pending"]]]),
+          fetchList("DigiVault Project", ["name"], [["client", "=", clientId]]),
+          fetchList("DigiVault Client Document", ["name", "document_title", "document_date", "document_status"], [["client", "=", clientId]], 10, "creation desc"),
+          fetchList("DigiVault GAP Analysis", ["name", "gap_status"], [["client", "=", clientId]], 1, "creation desc"),
         ]);
-
-        const len = (r: PromiseSettledResult<any>) => r.status === "fulfilled" ? (r.value?.length ?? 0) : 0;
-        const val = (r: PromiseSettledResult<any>) => r.status === "fulfilled" ? (r.value ?? []) : [];
-
-        setNewLeads(len(leadsToday));
-        setTasksDue(len(tasks));
-        setPendingProposals(len(proposals));
-
-        setTotalLeads(len(allLeads));
-        setVerifiedLeads(len(verified));
-        setTotalClients(len(clients));
-        setProposalsSent(len(sentProposals));
-        setPaidInvoices(len(paid));
-
-        const sumAmount = (arr: any[]) => arr.reduce((s: number, p: any) => s + (parseFloat(p.amount) || 0), 0);
-        setRevenueThisMonth(sumAmount(val(paymentsThis)));
-        setRevenueLastMonth(sumAmount(val(paymentsLast)));
-
-        setPipeline(val(projects));
-        if (val(docs).length) setActivity(val(docs));
-      } catch {}
-      setLoading(false);
+        if (compRes.status === "fulfilled") setCompleted(compRes.value?.length ?? 0);
+        if (onRes.status === "fulfilled") setOngoing(onRes.value?.length ?? 0);
+        if (penRes.status === "fulfilled") setPending(penRes.value?.length ?? 0);
+        if (projRes.status === "fulfilled") setProjects(projRes.value?.length ?? 0);
+        if (actRes.status === "fulfilled" && actRes.value?.length) setActivity(actRes.value);
+        if (gapRes.status === "fulfilled" && gapRes.value?.length) {
+          const g = gapRes.value[0];
+          setGapStatus(g.gap_status || "");
+          if (g.gap_status === "Pending" || g.gap_status === "Rejected") {
+            try {
+              const full = await fetchOne("DigiVault GAP Analysis", g.name);
+              const issues = (full?.gap_files || []).filter(
+                (f: any) => f.file_status === "Missing" || f.file_status === "Rejected"
+              ).length;
+              setGapIssueCount(issues);
+            } catch { /* silent */ }
+          }
+        }
+      } catch {
+        // keep defaults
+      } finally {
+        setLoading(false);
+      }
     };
     load();
-  }, [bdId, today, thisMonthStart, thisMonthEnd, lastMonthStart, lastMonthEnd]);
+  }, [clientId]);
 
-  /* ── Funnel helper ── */
-  const funnelStages = [
-    { label: "Leads", count: totalLeads, color: "hsl(220, 14%, 70%)" },
-    { label: "Verified", count: verifiedLeads, color: "hsl(var(--primary))" },
-    { label: "Clients", count: totalClients, color: "hsl(180, 60%, 45%)" },
-    { label: "Proposals", count: proposalsSent, color: "hsl(263, 70%, 50%)" },
-    { label: "Paid", count: paidInvoices, color: "hsl(var(--success))" },
-  ];
-  const maxFunnel = Math.max(...funnelStages.map((s) => s.count), 1);
+  const fmtDate = (d: string) => {
+    try {
+      return format(parseISO(d), "dd MMM yyyy");
+    } catch {
+      return d;
+    }
+  };
 
-  const convRate = (from: number, to: number) =>
-    from > 0 ? Math.round((to / from) * 100) + "%" : "–";
-
-  const greeting = (() => {
-    const h = new Date().getHours();
-    if (h < 12) return "Good morning";
-    if (h < 17) return "Good afternoon";
-    return "Good evening";
-  })();
+  const Badge = ({ status }: { status: string }) => {
+    const s = statusStyles[status] ?? statusStyles.Pending;
+    return (
+      <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${s.bg} ${s.text}`}>
+        {status}
+      </span>
+    );
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-background pb-20">
@@ -199,145 +134,135 @@ const Dashboard = () => {
             <MessageSquare size={18} className="text-primary" />
           </span>
           <span className="w-10 h-10 rounded-full border border-input bg-muted flex items-center justify-center overflow-hidden">
-            <User size={18} className="text-muted-foreground" />
+            {photoUrl ? (
+              <img src={photoUrl} alt="Profile" className="w-full h-full object-cover" />
+            ) : (
+              <User size={18} className="text-muted-foreground" />
+            )}
           </span>
         </div>
       </div>
 
       <div className="px-4 space-y-5">
-        {/* ═══ SECTION 1 — Greeting + Today's Stats ═══ */}
-        <section className="rounded-xl bg-primary p-4">
-          <p className="text-primary-foreground text-lg font-bold">{greeting}, {bdName.split(" ")[0]}!</p>
-          <p className="text-primary-foreground/70 text-xs mt-0.5">{format(new Date(), "EEEE, dd MMMM yyyy")}</p>
-          <div className="grid grid-cols-3 gap-3 mt-4">
-            {[
-              { label: "New Leads", value: newLeads, icon: Users },
-              { label: "Tasks Due", value: tasksDue, icon: ListTodo },
-              { label: "Pending Proposals", value: pendingProposals, icon: FileText },
-            ].map((m) => (
-              <div key={m.label} className="rounded-lg bg-primary-foreground/15 p-3 flex flex-col items-center">
-                <m.icon size={16} className="text-primary-foreground/80 mb-1" />
-                <span className="text-xl font-bold text-primary-foreground">{m.value}</span>
-                <span className="text-[10px] text-primary-foreground/70 text-center leading-tight mt-0.5">{m.label}</span>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ═══ SECTION 2 — Conversion Funnel ═══ */}
+        {/* ── Status ── */}
         <section>
-          <div className="flex items-center gap-2 mb-3">
-            <TrendingUp size={16} className="text-primary" />
-            <span className="text-sm font-semibold text-foreground">Conversion Funnel</span>
-          </div>
-          <div className="rounded-xl border border-border p-4 space-y-2">
-            {funnelStages.map((stage, i) => {
-              const widthPct = Math.max((stage.count / maxFunnel) * 100, 12);
-              return (
-                <div key={stage.label}>
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="h-8 rounded-md flex items-center px-3 transition-all duration-500"
-                      style={{ width: `${widthPct}%`, backgroundColor: stage.color }}
-                    >
-                      <span className="text-xs font-bold text-white truncate">{stage.count}</span>
-                    </div>
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">{stage.label}</span>
-                  </div>
-                  {i < funnelStages.length - 1 && (
-                    <p className="text-[10px] text-muted-foreground ml-2 mt-0.5">
-                      → {convRate(stage.count, funnelStages[i + 1].count)} conversion
-                    </p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* ═══ SECTION 3 — Revenue This Month ═══ */}
-        <section className="rounded-xl bg-[hsl(142_76%_90%)] p-4">
-          <p className="text-xs font-medium text-[hsl(142_76%_36%)]">Revenue This Month</p>
-          <p className="text-2xl font-bold text-[hsl(142_76%_36%)] mt-1">{fmtCurrency(revenueThisMonth)}</p>
-          <p className="text-xs text-[hsl(142_76%_36%)]/70 mt-1">
-            vs last month {fmtCurrency(revenueLastMonth)}
-          </p>
-        </section>
-
-        {/* ═══ SECTION 4 — Active Pipeline ═══ */}
-        <section>
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center gap-2 mb-2">
             <BarChart3 size={16} className="text-primary" />
-            <span className="text-sm font-semibold text-foreground">My Active Pipeline</span>
+            <span className="text-sm font-semibold text-foreground">Status</span>
           </div>
-          {pipeline.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No active projects</p>
-          ) : (
-            <div className="space-y-2 max-h-[260px] overflow-y-auto">
-              {pipeline.map((p: any) => (
-                <button
-                  key={p.name}
-                  onClick={() => navigate(`/clients/projects/details`)}
-                  className="w-full rounded-xl border border-border p-3 flex items-center gap-3 text-left hover:bg-muted/50 transition-colors"
-                >
-                  <span className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                    <MapPin size={16} className="text-primary" />
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{p.project_name || p.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">{p.client} • {p.service || "—"}</p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <span className="text-xs text-muted-foreground">{daysSince(p.creation)}d</span>
-                    <ChevronRight size={14} className="text-muted-foreground ml-1 inline" />
-                  </div>
-                </button>
-              ))}
+          <div className="h-px bg-border mb-3" />
+
+          <div className="grid grid-cols-3 gap-3">
+            {/* Completed */}
+            <div className="rounded-xl p-3 flex flex-col items-center justify-center min-h-[80px] bg-[hsl(142_76%_90%)]">
+              <div className="flex items-center gap-1.5">
+                <CheckCircle size={16} className="text-[hsl(142_76%_36%)]" />
+                <span className="text-2xl font-bold text-[hsl(142_76%_36%)]">{completed}</span>
+              </div>
+              <span className="text-xs font-medium text-[hsl(142_76%_36%)] mt-1">Completed</span>
             </div>
-          )}
+            {/* Ongoing */}
+            <div className="rounded-xl p-3 flex flex-col items-center justify-center min-h-[80px] bg-[hsl(217_91%_93%)]">
+              <div className="flex items-center gap-1.5">
+                <Hourglass size={16} className="text-[hsl(224_76%_48%)]" />
+                <span className="text-2xl font-bold text-[hsl(224_76%_48%)]">{ongoing}</span>
+              </div>
+              <span className="text-xs font-medium text-[hsl(224_76%_48%)] mt-1">Ongoing</span>
+            </div>
+            {/* Pending */}
+            <div className="rounded-xl p-3 flex flex-col items-center justify-center min-h-[80px] bg-[hsl(48_96%_89%)]">
+              <div className="flex items-center gap-1.5">
+                <Clock size={16} className="text-[hsl(21_90%_48%)]" />
+                <span className="text-2xl font-bold text-[hsl(21_90%_48%)]">{pending}</span>
+              </div>
+              <span className="text-xs font-medium text-[hsl(21_90%_48%)] mt-1">Pending</span>
+            </div>
+          </div>
         </section>
 
-        {/* ═══ Quick Actions ═══ */}
-        <section className="grid grid-cols-4 gap-2">
-          {[
-            { label: "Brochure", icon: BookOpen },
-            { label: "Rate Chart", icon: BarChart3 },
-            { label: "Service Docs", icon: FileText },
-            { label: "Video Promo", icon: Video },
-          ].map((a) => (
+        {/* ── Projects banner ── */}
+        <section>
+          <button
+            onClick={() => navigate("/select-project")}
+            className="w-full rounded-xl px-4 py-3 flex items-center justify-between bg-[hsl(270_82%_94%)] hover:bg-[hsl(270_82%_90%)] transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <span className="w-9 h-9 rounded-full bg-background flex items-center justify-center">
+                <Landmark size={18} className="text-[hsl(263_70%_50%)]" />
+              </span>
+              <span className="text-sm font-bold text-[hsl(263_70%_50%)]">Projects</span>
+            </div>
+            <span className="text-2xl font-bold text-[hsl(263_70%_50%)]">{projects}</span>
+          </button>
+        </section>
+        {/* ── GAP Alert ── */}
+        {(gapStatus === "Pending" || gapStatus === "Rejected") && (
+          <section>
             <button
-              key={a.label}
-              className="flex flex-col items-center gap-1.5 rounded-xl border border-border p-3 hover:bg-muted/50 transition-colors"
+              onClick={() => navigate("/gap-documents")}
+              className={`w-full rounded-xl px-4 py-3 flex items-center gap-3 ${
+                gapStatus === "Rejected"
+                  ? "bg-[hsl(0_93%_94%)]"
+                  : "bg-[hsl(48_96%_89%)]"
+              }`}
             >
-              <a.icon size={18} className="text-primary" />
-              <span className="text-[10px] font-medium text-foreground text-center leading-tight">{a.label}</span>
+              <AlertTriangle
+                size={20}
+                className={gapStatus === "Rejected" ? "text-[hsl(0_72%_51%)]" : "text-[hsl(38_92%_50%)]"}
+              />
+              <span
+                className={`flex-1 text-left text-sm font-medium ${
+                  gapStatus === "Rejected" ? "text-[hsl(0_72%_51%)]" : "text-[hsl(38_92%_50%)]"
+                }`}
+              >
+                {gapStatus === "Rejected"
+                  ? "Documents need re-upload"
+                  : "Documents under review"}
+              </span>
+              {gapIssueCount > 0 && (
+                <span className="w-6 h-6 rounded-full bg-destructive text-destructive-foreground text-xs font-bold flex items-center justify-center">
+                  {gapIssueCount}
+                </span>
+              )}
+            </button>
+          </section>
+        )}
+
+        <section className="grid grid-cols-2 gap-3">
+          {[
+            { label: "Orders", path: "/orders" },
+            { label: "Payments", path: "/payments" },
+            { label: "Proposals", path: "/proposals" },
+            { label: "Estimate", path: "/estimates" },
+            { label: "Invoice", path: "/invoices" },
+          ].map((btn) => (
+            <button
+              key={btn.label}
+              onClick={() => navigate(btn.path)}
+              className="flex items-center justify-center gap-1.5 h-11 rounded-lg bg-primary text-primary-foreground text-sm font-medium"
+            >
+              <FileText size={14} />
+              {btn.label}
             </button>
           ))}
         </section>
 
-        {/* ═══ Live Tracking ═══ */}
-        <button
-          onClick={() => navigate("/service-tracker")}
-          className="w-full rounded-xl bg-secondary px-4 py-3 flex items-center gap-3 hover:bg-accent transition-colors"
-        >
-          <PlayCircle size={20} className="text-primary" />
-          <span className="text-sm font-semibold text-foreground">Live Tracking</span>
-          <ChevronRight size={16} className="text-muted-foreground ml-auto" />
-        </button>
-
-        {/* ═══ SECTION 5 — Recent Activity ═══ */}
+        {/* ── All Activity ── */}
         <section>
           <div className="flex items-center gap-2 mb-3">
             <RefreshCw size={16} className={`text-primary ${loading ? "animate-spin" : ""}`} />
-            <span className="text-sm font-semibold text-foreground">Recent Activity</span>
+            <span className="text-sm font-semibold text-foreground">All Activity</span>
           </div>
+
           <div className="rounded-xl border border-border overflow-hidden">
+            {/* header row */}
             <div className="grid grid-cols-[1fr_90px_90px] bg-secondary px-3 py-2">
               <span className="text-xs font-semibold text-muted-foreground">Document Title</span>
               <span className="text-xs font-semibold text-muted-foreground text-center">Date</span>
               <span className="text-xs font-semibold text-muted-foreground text-center">Status</span>
             </div>
-            {activity.map((item: any, i: number) => (
+
+            {activity.map((item, i) => (
               <div
                 key={item.name + i}
                 className={`grid grid-cols-[1fr_90px_90px] px-3 py-2.5 items-center ${
