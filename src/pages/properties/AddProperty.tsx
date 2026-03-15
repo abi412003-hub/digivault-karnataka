@@ -47,6 +47,7 @@ const AddProperty = () => {
   const hadDraft = useRef(hasDraft(DRAFT_KEY));
   const [form, setField, clearDraft, setMultiple, lastSaved] = useFormDraft(DRAFT_KEY, {
     name: "", type: "", title: "", rtc: "", size: "",
+    ownershipType: "Individual", jointMembersCount: "1",
     division: "", district: "", taluk: "", latitude: "", longitude: "",
   });
   const [saving, setSaving] = useState(false);
@@ -88,6 +89,8 @@ const AddProperty = () => {
         project: linkedProject,
         property_name: form.name, property_type: form.type,
         property_title: form.title, property_rtc: form.rtc, property_size: form.size,
+        ownership_type: form.ownershipType || "Individual",
+        joint_members_count: form.ownershipType === "Joint" ? Number(form.jointMembersCount) || 1 : 0,
         property_state: "Karnataka", property_division: form.division,
         property_district: form.district, property_taluk: form.taluk,
         property_latitude: form.latitude, property_longitude: form.longitude,
@@ -95,6 +98,16 @@ const AddProperty = () => {
       const propId = propRes?.data?.name || "";
       clearDraft();
       toast({ title: "Property added!" });
+      // Store ownership info for CommonDocs joint member fields
+      if (form.ownershipType === "Joint" && Number(form.jointMembersCount) > 1) {
+        localStorage.setItem("edv_joint_members", JSON.stringify({
+          propertyId: propId,
+          ownershipType: form.ownershipType,
+          count: Number(form.jointMembersCount),
+        }));
+      } else {
+        localStorage.removeItem("edv_joint_members");
+      }
       // Navigate to service selection with project context
       const params = linkedProject ? `?project=${encodeURIComponent(linkedProject)}` : "";
       navigate(`/properties/${encodeURIComponent(propId)}/select-service${params}`, { replace: true });
@@ -125,6 +138,26 @@ const AddProperty = () => {
         </div>
         <div data-field="type">
           <Dropdown label="Property Type" value={form.type} onChange={(v) => setField("type", v)} options={propertyTypes} required error={errors.type} />
+
+          {/* Ownership Type */}
+          <Dropdown label="Ownership Type" value={form.ownershipType} onChange={(v) => { setField("ownershipType", v); if (v === "Individual") setField("jointMembersCount", "1"); }} options={["Individual", "Joint"]} required />
+
+          {/* Joint Members Count — shown only when Joint */}
+          {form.ownershipType === "Joint" && (
+            <div className="space-y-1">
+              <RequiredLabel>How many joint members?</RequiredLabel>
+              <Input
+                type="number"
+                min="2"
+                max="10"
+                placeholder="2"
+                value={form.jointMembersCount}
+                onChange={(e) => setField("jointMembersCount", e.target.value)}
+                className="h-12"
+              />
+              <p className="text-xs text-muted-foreground">Name, Aadhaar & PAN of each member will be collected in the next step</p>
+            </div>
+          )}
         </div>
         <div className="space-y-1">
           <OptionalLabel>Property Title</OptionalLabel>
