@@ -82,13 +82,18 @@ const RegisterForm = () => {
     auth.registrationType === "Land Aggregator - Organisation";
 
   const defaultValues = {
-    fullName: "", email: "", companyName: "", companyType: "", gstinPan: "",
+    salutation: "Mr", fullName: "", relationType: "S/O", relationName: "",
+    dateOfBirth: "", age: "", email: "", whatsappNo: "",
+    aadhaarNo: "", panNo: "",
+    companyName: "", companyType: "", gstinPan: "",
     businessRegNo: "", natureOfBusiness: "", companyWebsite: "", numEmployees: "",
     annualRevenue: "", dateOfEstablishment: "", ownerName: "", ownershipStatus: "",
-    incorporationNumber: "", division: "", district: "", taluk: "",
+    incorporationNumber: "",
+    doorNo: "", buildingName: "", crossRoad: "", mainRoad: "", landmark: "", areaName: "",
+    division: "", district: "", taluk: "",
     urbanRural: "" as "Urban" | "Rural" | "", cmcType: "", pattana: "", ward: "",
     gramPanchayathi: "", village: "", postOffice: "", pincode: "",
-    latitude: "", longitude: "",
+    latitude: "", longitude: "", bdReferralCode: "",
   };
 
   const hadDraft = useRef(hasDraft(DRAFT_KEY));
@@ -145,6 +150,12 @@ const RegisterForm = () => {
   /* generated address */
   const generatedAddress = useMemo(() => {
     const parts: string[] = [];
+    if (form.doorNo) parts.push(form.doorNo);
+    if (form.buildingName) parts.push(form.buildingName);
+    if (form.crossRoad) parts.push(form.crossRoad);
+    if (form.mainRoad) parts.push(form.mainRoad);
+    if (form.landmark) parts.push("near " + form.landmark);
+    if (form.areaName) parts.push(form.areaName);
     if (form.urbanRural === "Urban") {
       if (form.cmcType) parts.push(form.cmcType);
       if (form.pattana) parts.push(form.pattana);
@@ -159,7 +170,7 @@ const RegisterForm = () => {
     parts.push("KARNATAKA");
     if (form.pincode) parts.push(form.pincode);
     return parts.join(", ");
-  }, [form.urbanRural, form.cmcType, form.pattana, form.ward, form.gramPanchayathi, form.village, form.taluk, form.district, form.division, form.pincode]);
+  }, [form.doorNo, form.buildingName, form.crossRoad, form.mainRoad, form.landmark, form.areaName, form.urbanRural, form.cmcType, form.pattana, form.ward, form.gramPanchayathi, form.village, form.taluk, form.district, form.division, form.pincode]);
 
   /* scroll to first error */
   const scrollToFirstError = useCallback((errs: Record<string, string>) => {
@@ -180,6 +191,12 @@ const RegisterForm = () => {
       }
     } else {
       rules.fullName = { required: true, minLength: 2, message: "Full name is required" };
+      rules.relationName = { required: true, message: "Relation name is required" };
+      rules.dateOfBirth = { required: true, message: "Date of birth is required" };
+      rules.aadhaarNo = { required: true, pattern: /^\d{4}\s?\d{4}\s?\d{4}$/, message: "Enter valid 12-digit Aadhaar" };
+      rules.panNo = { required: true, pattern: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/i, message: "Enter valid PAN (e.g. ABCDE1234F)" };
+      rules.doorNo = { required: true, message: "Door number is required" };
+      rules.areaName = { required: true, message: "Area name is required" };
     }
 
     if (form.email) {
@@ -215,6 +232,38 @@ const RegisterForm = () => {
   const AddressSection = ({ heading = "Address" }: { heading?: string }) => (
     <section className="space-y-4">
       <h2 className="text-base font-bold text-foreground">{heading}</h2>
+
+      {/* Detailed address fields */}
+      {!isOrgType && (
+        <>
+          <div className="space-y-1" data-field="doorNo">
+            <RequiredLabel>Door No</RequiredLabel>
+            <Input placeholder="#18" value={form.doorNo} onChange={(e) => setField("doorNo", e.target.value)} className={`h-12 ${errors.doorNo ? "border-destructive ring-1 ring-destructive" : ""}`} />
+            {errors.doorNo && <p className="text-xs text-destructive mt-1">{errors.doorNo}</p>}
+          </div>
+          <div className="space-y-1">
+            <OptionalLabel>Building Name</OptionalLabel>
+            <Input placeholder="Lakshmi Nivasa" value={form.buildingName} onChange={(e) => setField("buildingName", e.target.value)} className="h-12" />
+          </div>
+          <div className="space-y-1">
+            <OptionalLabel>Cross Road</OptionalLabel>
+            <Input placeholder="2nd Cross" value={form.crossRoad} onChange={(e) => setField("crossRoad", e.target.value)} className="h-12" />
+          </div>
+          <div className="space-y-1">
+            <OptionalLabel>Main Road</OptionalLabel>
+            <Input placeholder="Bannerghatta Main" value={form.mainRoad} onChange={(e) => setField("mainRoad", e.target.value)} className="h-12" />
+          </div>
+          <div className="space-y-1">
+            <OptionalLabel>Landmark</OptionalLabel>
+            <Input placeholder="Near Meenakshi Temple" value={form.landmark} onChange={(e) => setField("landmark", e.target.value)} className="h-12" />
+          </div>
+          <div className="space-y-1" data-field="areaName">
+            <RequiredLabel>Area Name</RequiredLabel>
+            <Input placeholder="Arekere MICO Layout" value={form.areaName} onChange={(e) => setField("areaName", e.target.value)} className={`h-12 ${errors.areaName ? "border-destructive ring-1 ring-destructive" : ""}`} />
+            {errors.areaName && <p className="text-xs text-destructive mt-1">{errors.areaName}</p>}
+          </div>
+        </>
+      )}
 
       <Dropdown label="State" value="Karnataka" onChange={() => {}} options={["Karnataka"]} disabled />
       <div data-field="division">
@@ -314,6 +363,22 @@ const RegisterForm = () => {
           ? `📍 ${Number(form.latitude).toFixed(4)}°N, ${Number(form.longitude).toFixed(4)}°E`
           : "Select the location"}
       </button>
+
+      {/* BD Referral Code */}
+      <div className="space-y-1">
+        <OptionalLabel>BD Referral Code</OptionalLabel>
+        <div className="flex gap-2">
+          <Input
+            placeholder="Type / Scan"
+            value={form.bdReferralCode}
+            onChange={(e) => setField("bdReferralCode", e.target.value)}
+            className="h-12 flex-1"
+          />
+          <button className="h-12 w-12 rounded-lg border border-input bg-background flex items-center justify-center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground"><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>
+          </button>
+        </div>
+      </div>
     </section>
   );
 
@@ -390,15 +455,31 @@ const RegisterForm = () => {
         navigate("/dashboard", { replace: true });
       } else {
         const body = {
-          client_name: form.fullName, email: form.email, client_type: "Personal",
+          client_name: form.fullName, salutation: form.salutation,
+          relation_type: form.relationType, relation_name: form.relationName,
+          date_of_birth: form.dateOfBirth || undefined,
+          age: form.age ? Number(form.age) : undefined,
+          email: form.email, phone_no: auth.phone,
+          whatsapp_no: form.whatsappNo ? "+91" + form.whatsappNo : undefined,
+          aadhaar_no: form.aadhaarNo.replace(/\s/g, ""),
+          pan_no: form.panNo.toUpperCase(),
+          door_no: form.doorNo, building_name: form.buildingName,
+          cross_road: form.crossRoad, main_road: form.mainRoad,
+          landmark: form.landmark, area_name: form.areaName,
+          client_type: "Personal",
           registration_type: auth.registrationType, client_state: "Karnataka",
           division: form.division, client_district: form.district, client_taluk: form.taluk,
           urban_rural: form.urbanRural, cmc_tmc_type: form.cmcType,
-          pattana_panchayathi: form.pattana, ward: form.ward, post_office: form.postOffice,
+          pattana_panchayathi: form.pattana, ward: form.ward,
+          gram_panchayathi: form.gramPanchayathi, village: form.village,
+          post_office: form.postOffice,
           client_pincode: form.pincode, full_address_review: generatedAddress,
-          client_latitude: form.latitude, client_longitude: form.longitude,
-          phone_no: auth.phone, otp_verified: 1, terms_accepted: 1, client_status: "Active",
+          client_latitude: form.latitude || undefined,
+          client_longitude: form.longitude || undefined,
+          bd_referral_code: form.bdReferralCode || undefined,
+          otp_verified: 1, terms_accepted: 1, client_status: "Active",
         };
+        Object.keys(body).forEach((k) => (body as any)[k] === undefined && delete (body as any)[k]);
 
         const res = await createRecord("DigiVault Client", body);
         const clientId = res?.data?.name || "CL-00001";
@@ -522,22 +603,107 @@ const RegisterForm = () => {
             <section className="space-y-4">
               <h2 className="text-base font-bold text-foreground">Personal Details</h2>
 
+              {/* Full Name: Salutation + Name side by side */}
               <div className="space-y-1" data-field="fullName">
                 <RequiredLabel>Full Name</RequiredLabel>
-                <Input
-                  placeholder="Enter your full name"
-                  value={form.fullName}
-                  onChange={(e) => setField("fullName", e.target.value)}
-                  className={`h-12 ${errors.fullName ? "border-destructive ring-1 ring-destructive" : ""}`}
-                />
+                <div className="flex gap-2">
+                  <select
+                    value={form.salutation}
+                    onChange={(e) => setField("salutation", e.target.value)}
+                    className="w-[80px] h-12 appearance-none rounded-lg border border-input bg-background px-3 text-sm text-foreground"
+                  >
+                    {["Mr", "Mrs", "Ms", "Dr"].map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                  <Input
+                    placeholder="Rajesh Kumar"
+                    value={form.fullName}
+                    onChange={(e) => setField("fullName", e.target.value)}
+                    className={`h-12 flex-1 ${errors.fullName ? "border-destructive ring-1 ring-destructive" : ""}`}
+                  />
+                </div>
                 {errors.fullName && <p className="text-xs text-destructive mt-1">{errors.fullName}</p>}
               </div>
 
+              {/* Relation Name: S/O + Name side by side */}
+              <div className="space-y-1" data-field="relationName">
+                <RequiredLabel>Relation Name</RequiredLabel>
+                <div className="flex gap-2">
+                  <select
+                    value={form.relationType}
+                    onChange={(e) => setField("relationType", e.target.value)}
+                    className="w-[80px] h-12 appearance-none rounded-lg border border-input bg-background px-3 text-sm text-foreground"
+                  >
+                    {["S/O", "D/O", "W/O", "C/O"].map((r) => <option key={r} value={r}>{r}</option>)}
+                  </select>
+                  <Input
+                    placeholder="Kumar Rao"
+                    value={form.relationName}
+                    onChange={(e) => setField("relationName", e.target.value)}
+                    className={`h-12 flex-1 ${errors.relationName ? "border-destructive ring-1 ring-destructive" : ""}`}
+                  />
+                </div>
+                {errors.relationName && <p className="text-xs text-destructive mt-1">{errors.relationName}</p>}
+              </div>
+
+              {/* Date of Birth */}
+              <div className="space-y-1" data-field="dateOfBirth">
+                <RequiredLabel>Date of Birth</RequiredLabel>
+                <Input
+                  type="date"
+                  value={form.dateOfBirth}
+                  onChange={(e) => {
+                    setField("dateOfBirth", e.target.value);
+                    if (e.target.value) {
+                      const dob = new Date(e.target.value);
+                      const today = new Date();
+                      let a = today.getFullYear() - dob.getFullYear();
+                      const m = today.getMonth() - dob.getMonth();
+                      if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) a--;
+                      setField("age", String(Math.max(0, a)));
+                    }
+                  }}
+                  className={`h-12 ${errors.dateOfBirth ? "border-destructive ring-1 ring-destructive" : ""}`}
+                />
+                {errors.dateOfBirth && <p className="text-xs text-destructive mt-1">{errors.dateOfBirth}</p>}
+              </div>
+
+              {/* Age (auto-calculated, editable) */}
+              <div className="space-y-1">
+                <RequiredLabel>Age</RequiredLabel>
+                <Input
+                  type="number"
+                  placeholder="24"
+                  value={form.age}
+                  onChange={(e) => setField("age", e.target.value.slice(0, 3))}
+                  className="h-12 w-24"
+                />
+              </div>
+
+              {/* Profile Photo */}
+              <div className="space-y-1">
+                <OptionalLabel>Profile Photo</OptionalLabel>
+                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
+                <button
+                  onClick={() => fileRef.current?.click()}
+                  className="flex items-center gap-3 w-full h-12 rounded-lg border border-input bg-background px-4"
+                >
+                  {photoPreview ? (
+                    <img src={photoPreview} alt="Profile" className="w-8 h-8 rounded-full object-cover" />
+                  ) : (
+                    <Camera size={20} className="text-muted-foreground" />
+                  )}
+                  <span className="text-sm text-muted-foreground">
+                    {photoPreview ? "Photo selected" : "choose the Profile Photo"}
+                  </span>
+                </button>
+              </div>
+
+              {/* Email */}
               <div className="space-y-1" data-field="email">
                 <OptionalLabel>Email</OptionalLabel>
                 <Input
                   type="email"
-                  placeholder="Enter your email"
+                  placeholder="Rajeshkumar@gmail.com"
                   value={form.email}
                   onChange={(e) => setField("email", e.target.value)}
                   className={`h-12 ${errors.email ? "border-destructive ring-1 ring-destructive" : ""}`}
@@ -545,19 +711,66 @@ const RegisterForm = () => {
                 {errors.email && <p className="text-xs text-destructive mt-1">{errors.email}</p>}
               </div>
 
+              {/* Phone No (pre-filled from OTP, read-only) */}
               <div className="space-y-1">
-                <OptionalLabel>Profile Photo</OptionalLabel>
-                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
+                <RequiredLabel>Phone No</RequiredLabel>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">+91</span>
+                  <Input
+                    value={auth.phone?.replace("+91", "") || ""}
+                    readOnly
+                    className="h-12 pl-12 bg-muted cursor-not-allowed"
+                  />
+                </div>
+              </div>
+
+              {/* WhatsApp No */}
+              <div className="space-y-1">
+                <OptionalLabel>WhatsApp No</OptionalLabel>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">+91</span>
+                  <Input
+                    placeholder="9400 8138 02"
+                    value={form.whatsappNo}
+                    onChange={(e) => setField("whatsappNo", e.target.value.replace(/\D/g, "").slice(0, 10))}
+                    className="h-12 pl-12"
+                  />
+                </div>
                 <button
-                  onClick={() => fileRef.current?.click()}
-                  className="w-20 h-20 rounded-full border-2 border-input bg-muted flex items-center justify-center overflow-hidden"
+                  type="button"
+                  onClick={() => setField("whatsappNo", auth.phone?.replace("+91", "") || "")}
+                  className="text-xs text-primary mt-0.5"
                 >
-                  {photoPreview ? (
-                    <img src={photoPreview} alt="Profile" className="w-full h-full object-cover" />
-                  ) : (
-                    <Camera size={28} className="text-muted-foreground" />
-                  )}
+                  Same as Phone No
                 </button>
+              </div>
+
+              {/* Aadhaar No */}
+              <div className="space-y-1" data-field="aadhaarNo">
+                <RequiredLabel>Aadhaar No</RequiredLabel>
+                <Input
+                  placeholder="9446 8334 9230"
+                  value={form.aadhaarNo}
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/\D/g, "").slice(0, 12);
+                    const formatted = digits.replace(/(\d{4})(?=\d)/g, "$1 ");
+                    setField("aadhaarNo", formatted);
+                  }}
+                  className={`h-12 ${errors.aadhaarNo ? "border-destructive ring-1 ring-destructive" : ""}`}
+                />
+                {errors.aadhaarNo && <p className="text-xs text-destructive mt-1">{errors.aadhaarNo}</p>}
+              </div>
+
+              {/* PAN No */}
+              <div className="space-y-1" data-field="panNo">
+                <RequiredLabel>PAN No</RequiredLabel>
+                <Input
+                  placeholder="OHAP55725P"
+                  value={form.panNo}
+                  onChange={(e) => setField("panNo", e.target.value.toUpperCase().slice(0, 10))}
+                  className={`h-12 ${errors.panNo ? "border-destructive ring-1 ring-destructive" : ""}`}
+                />
+                {errors.panNo && <p className="text-xs text-destructive mt-1">{errors.panNo}</p>}
               </div>
             </section>
 
