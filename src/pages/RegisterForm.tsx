@@ -261,9 +261,14 @@ const RegisterForm = () => {
         </div>
       </div>
 
-      <button className="flex items-center gap-2 text-sm text-primary min-h-[44px]">
+      <button
+        onClick={() => setShowMap(true)}
+        className="flex items-center gap-2 text-sm text-primary min-h-[44px]"
+      >
         <MapPin size={18} className="text-destructive" />
-        Select the location
+        {latitude && longitude
+          ? `📍 ${Number(latitude).toFixed(4)}°N, ${Number(longitude).toFixed(4)}°E`
+          : "Select the location"}
       </button>
     </section>
   );
