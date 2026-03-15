@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CheckCircle, Hourglass, Clock, Eye, FileText, FolderOpen } from "lucide-react";
+import { CheckCircle, Hourglass, Clock, Eye, FileText, FolderOpen, MapPin, Plus, Wrench, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import PageHeader from "@/components/PageHeader";
 import BottomTabs from "@/components/BottomTabs";
@@ -13,23 +13,38 @@ interface ProjectData {
   project_status: string;
 }
 
-interface StatusCounts {
-  completed: number;
-  ongoing: number;
-  pending: number;
+interface PropertyData {
+  name: string;
+  property_name: string;
+  property_type: string;
+  property_district: string;
+  property_taluk: string;
+}
+
+interface SRData {
+  name: string;
+  project: string;
+  property: string;
+  main_service: string;
+  sub_service: string;
+  request_status: string;
 }
 
 const SelectProject = () => {
   const navigate = useNavigate();
   const { auth } = useAuth();
   const [projects, setProjects] = useState<ProjectData[]>([]);
-  const [statusMap, setStatusMap] = useState<Record<string, StatusCounts>>({});
+  const [propertiesByProject, setPropertiesByProject] = useState<Record<string, PropertyData[]>>({});
+  const [srsByProperty, setSrsByProperty] = useState<Record<string, SRData[]>>({});
+  const [expandedProject, setExpandedProject] = useState<string | null>(null);
+  const [expandedProperty, setExpandedProperty] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!auth.client_id) return;
     const load = async () => {
       try {
+        // Fetch projects
         const projs = await fetchList(
           "DigiVault Project",
           ["name", "project_name", "project_status"],
@@ -37,46 +52,62 @@ const SelectProject = () => {
         );
         setProjects(projs || []);
 
-        // Fetch service request counts per project
-        const srs = await fetchList(
-          "DigiVault Service Request",
-          ["name", "project", "request_status"],
+        // Fetch ALL properties for this client
+        const props = await fetchList(
+          "DigiVault Property",
+          ["name", "property_name", "property_type", "property_district", "property_taluk", "project"],
           [["client", "=", auth.client_id]]
         );
-        const map: Record<string, StatusCounts> = {};
-        for (const sr of srs || []) {
-          const proj = sr.project || "";
-          if (!map[proj]) map[proj] = { completed: 0, ongoing: 0, pending: 0 };
-          if (sr.request_status === "Completed") map[proj].completed++;
-          else if (sr.request_status === "In Progress") map[proj].ongoing++;
-          else map[proj].pending++;
+        // Group by project
+        const propMap: Record<string, PropertyData[]> = {};
+        for (const p of props || []) {
+          const proj = (p as any).project || "unassigned";
+          if (!propMap[proj]) propMap[proj] = [];
+          propMap[proj].push(p);
         }
-        setStatusMap(map);
-      } catch {
-        // keep empty
-      } finally {
-        setLoading(false);
-      }
+        setPropertiesByProject(propMap);
+
+        // Fetch ALL service requests for this client
+        const srs = await fetchList(
+          "DigiVault Service Request",
+          ["name", "project", "property", "main_service", "sub_service", "request_status"],
+          [["client", "=", auth.client_id]]
+        );
+        // Group by property
+        const srMap: Record<string, SRData[]> = {};
+        for (const sr of srs || []) {
+          const prop = sr.property || "unassigned";
+          if (!srMap[prop]) srMap[prop] = [];
+          srMap[prop].push(sr);
+        }
+        setSrsByProperty(srMap);
+
+        // Auto-expand first project
+        if (projs?.length) setExpandedProject(projs[0].name);
+      } catch {}
+      setLoading(false);
     };
     load();
   }, [auth.client_id]);
 
+  const statusColor = (status: string) => {
+    if (status === "Completed" || status === "Closed") return "text-green-600 bg-green-50";
+    if (status === "In Progress") return "text-blue-600 bg-blue-50";
+    return "text-amber-600 bg-amber-50";
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-background pb-20">
-      <PageHeader title="Details" />
+      <PageHeader title="My Projects" />
 
       <div className="px-4 py-4 space-y-4">
-        {/* Select Project header + Add Project button */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <FileText size={18} className="text-foreground" />
-            <span className="font-bold text-foreground">Select Project</span>
-          </div>
+        {/* Add Project button */}
+        <div className="flex justify-end">
           <Button
             onClick={() => navigate("/create-project")}
-            className="bg-orange-500 hover:bg-orange-600 text-white rounded-lg px-4 h-9 text-sm font-bold"
+            className="bg-primary hover:bg-primary/90 text-white rounded-lg px-4 h-9 text-sm font-bold gap-1"
           >
-            Add Project
+            <Plus size={16} /> New Project
           </Button>
         </div>
 
@@ -86,71 +117,132 @@ const SelectProject = () => {
           <div className="text-center py-12 space-y-4">
             <FolderOpen size={48} className="mx-auto text-muted-foreground" />
             <p className="text-muted-foreground">No projects yet</p>
-            <Button onClick={() => navigate("/create-project")} className="bg-orange-500 hover:bg-orange-600 text-white">
+            <Button onClick={() => navigate("/create-project")} className="bg-primary text-white">
               Create your first project
             </Button>
           </div>
         )}
 
-        {/* Project cards */}
+        {/* Project → Property → Orders hierarchy */}
         {projects.map((proj) => {
-          const counts = statusMap[proj.name] || { completed: 0, ongoing: 0, pending: 0 };
+          const isExpanded = expandedProject === proj.name;
+          const properties = propertiesByProject[proj.name] || [];
+          const allSRs = properties.flatMap((p) => srsByProperty[p.name] || []);
+          const completed = allSRs.filter((sr) => sr.request_status === "Completed").length;
+          const ongoing = allSRs.filter((sr) => sr.request_status === "In Progress").length;
+          const pending = allSRs.length - completed - ongoing;
+
           return (
-            <div key={proj.name} className="border border-border rounded-2xl p-4 space-y-3 bg-background">
-              {/* Project name + ID */}
-              <div className="text-center">
-                <h2 className="text-lg font-bold text-foreground">{proj.project_name}</h2>
-                <p className="text-sm text-muted-foreground">{proj.name}</p>
+            <div key={proj.name} className="border border-border rounded-2xl overflow-hidden bg-background">
+              {/* Project header — tap to expand/collapse */}
+              <button
+                onClick={() => setExpandedProject(isExpanded ? null : proj.name)}
+                className="w-full px-4 py-3 flex items-center gap-3 text-left"
+              >
+                <FolderOpen size={20} className="text-primary flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-base font-bold text-foreground truncate">{proj.project_name}</h2>
+                  <p className="text-xs text-muted-foreground">{proj.name} • {properties.length} properties • {allSRs.length} orders</p>
+                </div>
+                {isExpanded ? <ChevronUp size={18} className="text-muted-foreground" /> : <ChevronDown size={18} className="text-muted-foreground" />}
+              </button>
+
+              {/* Status counts */}
+              <div className="px-4 pb-2 flex gap-2">
+                <span className="text-[11px] px-2 py-0.5 rounded-full bg-green-50 text-green-600 font-semibold">{completed} done</span>
+                <span className="text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 font-semibold">{ongoing} ongoing</span>
+                <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 font-semibold">{pending} pending</span>
               </div>
 
-              {/* Action buttons row */}
-              <div className="flex justify-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="rounded-full border-foreground text-foreground text-xs h-8 gap-1"
-                  onClick={() => navigate(`/project/${encodeURIComponent(proj.name)}/property-review`)}
-                >
-                  <Eye size={14} /> View details
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="rounded-full border-foreground text-foreground text-xs h-8 gap-1"
-                >
-                  <FileText size={14} /> Project opinion
-                </Button>
-              </div>
+              {/* Expanded: show properties */}
+              {isExpanded && (
+                <div className="border-t border-border">
+                  {properties.length === 0 ? (
+                    <div className="px-4 py-6 text-center">
+                      <p className="text-sm text-muted-foreground mb-3">No properties added yet</p>
+                      <Button
+                        size="sm"
+                        onClick={() => navigate(`/properties/add?project=${encodeURIComponent(proj.name)}`)}
+                        className="bg-primary text-white gap-1"
+                      >
+                        <Plus size={14} /> Add Property
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-border">
+                      {properties.map((prop) => {
+                        const propSRs = srsByProperty[prop.name] || [];
+                        const isPropExpanded = expandedProperty === prop.name;
 
-              {/* e-files button */}
-              <div className="flex justify-center">
-                <Button
-                  size="sm"
-                  className="rounded-full bg-green-600 hover:bg-green-700 text-white text-xs h-8 gap-1 px-6"
-                  onClick={() => navigate(`/orders?project=${encodeURIComponent(proj.name)}`)}
-                >
-                  <FileText size={14} /> e-files
-                </Button>
-              </div>
+                        return (
+                          <div key={prop.name}>
+                            {/* Property row */}
+                            <button
+                              onClick={() => setExpandedProperty(isPropExpanded ? null : prop.name)}
+                              className="w-full px-4 py-3 flex items-center gap-3 text-left bg-muted/30"
+                            >
+                              <MapPin size={16} className="text-destructive flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-foreground truncate">{prop.property_name}</p>
+                                <p className="text-xs text-muted-foreground">{prop.property_type} • {prop.property_district}, {prop.property_taluk} • {propSRs.length} orders</p>
+                              </div>
+                              {isPropExpanded ? <ChevronUp size={16} className="text-muted-foreground" /> : <ChevronDown size={16} className="text-muted-foreground" />}
+                            </button>
 
-              {/* Status cards row */}
-              <div className="flex gap-2 justify-center">
-                <div className="flex items-center gap-1.5 bg-green-50 rounded-xl px-3 py-2 min-w-[90px]">
-                  <CheckCircle size={18} className="text-green-600" />
-                  <span className="text-lg font-bold text-green-600">{counts.completed}</span>
-                  <span className="text-[11px] text-green-600 leading-tight">Completed</span>
+                            {/* Property expanded: show orders + add service button */}
+                            {isPropExpanded && (
+                              <div className="bg-muted/10 px-4 py-2 space-y-2">
+                                {propSRs.length === 0 ? (
+                                  <p className="text-xs text-muted-foreground py-2 text-center">No services ordered yet</p>
+                                ) : (
+                                  propSRs.map((sr) => (
+                                    <button
+                                      key={sr.name}
+                                      onClick={() => navigate(`/service-request/${encodeURIComponent(sr.name)}/detail`)}
+                                      className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-background text-left"
+                                    >
+                                      <FileText size={14} className="text-primary flex-shrink-0" />
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-xs font-semibold text-foreground truncate">{sr.main_service}</p>
+                                        {sr.sub_service && <p className="text-[11px] text-muted-foreground truncate">{sr.sub_service}</p>}
+                                      </div>
+                                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${statusColor(sr.request_status)}`}>
+                                        {sr.request_status}
+                                      </span>
+                                    </button>
+                                  ))
+                                )}
+
+                                {/* Add new service to this property */}
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full h-9 text-xs gap-1 border-primary text-primary"
+                                  onClick={() => navigate(`/properties/${encodeURIComponent(prop.name)}/select-service?project=${encodeURIComponent(proj.name)}`)}
+                                >
+                                  <Wrench size={14} /> Add New Service
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+
+                      {/* Add another property to this project */}
+                      <div className="px-4 py-3">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full h-9 text-xs gap-1"
+                          onClick={() => navigate(`/properties/add?project=${encodeURIComponent(proj.name)}`)}
+                        >
+                          <Plus size={14} /> Add Another Property
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className="flex items-center gap-1.5 bg-blue-50 rounded-xl px-3 py-2 min-w-[90px]">
-                  <Hourglass size={18} className="text-blue-600" />
-                  <span className="text-lg font-bold text-blue-600">{counts.ongoing}</span>
-                  <span className="text-[11px] text-blue-600 leading-tight">Ongoing</span>
-                </div>
-                <div className="flex items-center gap-1.5 bg-amber-50 rounded-xl px-3 py-2 min-w-[90px]">
-                  <Clock size={18} className="text-amber-600" />
-                  <span className="text-lg font-bold text-amber-600">{counts.pending}</span>
-                  <span className="text-[11px] text-amber-600 leading-tight">Pending</span>
-                </div>
-              </div>
+              )}
             </div>
           );
         })}

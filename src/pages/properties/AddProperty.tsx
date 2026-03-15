@@ -79,8 +79,13 @@ const AddProperty = () => {
 
     setSaving(true);
     try {
+      const projParam = new URLSearchParams(window.location.search).get("project") || "";
+      const projCtx = JSON.parse(localStorage.getItem("edv_current_project") || "{}");
+      const linkedProject = projParam || projCtx.id || "";
+
       const propRes = await createRecord("DigiVault Property", {
         client: auth.client_id,
+        project: linkedProject,
         property_name: form.name, property_type: form.type,
         property_title: form.title, property_rtc: form.rtc, property_size: form.size,
         property_state: "Karnataka", property_division: form.division,
@@ -90,11 +95,8 @@ const AddProperty = () => {
       const propId = propRes?.data?.name || "";
       clearDraft();
       toast({ title: "Property added!" });
-      // Get project from URL or localStorage
-      const projParam = new URLSearchParams(window.location.search).get("project") || "";
-      const projCtx = JSON.parse(localStorage.getItem("edv_current_project") || "{}");
-      const projectId = projParam || projCtx.id || "";
-      const params = projectId ? `?project=${encodeURIComponent(projectId)}` : "";
+      // Navigate to service selection with project context
+      const params = linkedProject ? `?project=${encodeURIComponent(linkedProject)}` : "";
       navigate(`/properties/${encodeURIComponent(propId)}/select-service${params}`, { replace: true });
     } catch {
       toast({ title: "Failed to add property", variant: "destructive" });

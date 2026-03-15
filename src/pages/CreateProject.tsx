@@ -59,7 +59,7 @@ const CreateProject = () => {
       toast({ title: "Project created!" });
       // Store project context for the property creation step
       localStorage.setItem("edv_current_project", JSON.stringify({ id: projectName, name: form.title }));
-      navigate(`/properties/add?project=${encodeURIComponent(projectName)}`, { replace: true });
+      navigate(`/properties/add?project=${encodeURIComponent(projectName)}&projectName=${encodeURIComponent(form.title)}`, { replace: true });
     } catch {
       toast({ title: "Failed to create project", variant: "destructive" });
     } finally {

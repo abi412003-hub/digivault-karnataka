@@ -421,7 +421,7 @@ const RegisterForm = () => {
         });
         clearDraft();
         toast({ title: `Account already exists. Welcome back, ${existing.client_name}!` });
-        navigate("/create-project", { replace: true });
+        navigate("/dashboard", { replace: true });
         return;
       }
 
@@ -474,7 +474,7 @@ const RegisterForm = () => {
         setAuth((prev) => ({ ...prev, client_id: clientId, name: form.companyName, supabaseUserId: prev.supabaseUserId || "" }));
         clearDraft();
         toast({ title: "Registration successful!" });
-        navigate("/create-project", { replace: true });
+        navigate("/dashboard", { replace: true });
       } else {
         const body = {
           client_name: form.fullName, salutation: form.salutation,
@@ -508,7 +508,7 @@ const RegisterForm = () => {
         setAuth((prev) => ({ ...prev, client_id: clientId, name: form.fullName, supabaseUserId: prev.supabaseUserId || "" }));
         clearDraft();
         toast({ title: "Registration successful!" });
-        navigate("/create-project", { replace: true });
+        navigate("/dashboard", { replace: true });
       }
     } catch {
       toast({ title: "Registration failed. Please try again.", variant: "destructive" });
