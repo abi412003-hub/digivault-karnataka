@@ -286,7 +286,17 @@ const ServiceDocs = () => {
             </div>
             <div className="p-4 flex items-center justify-center min-h-[300px]">
               {previewModal.name.match(/\.pdf$/i) ? (
-                <iframe src={previewModal.url} className="w-full h-[60vh] rounded" />
+                <div className="flex flex-col items-center gap-4 py-8">
+                  <p className="text-sm text-muted-foreground text-center">PDF preview is not supported in this view.</p>
+                  <a
+                    href={previewModal.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-semibold"
+                  >
+                    Open PDF
+                  </a>
+                </div>
               ) : (
                 <img src={previewModal.url} alt="Preview" className="max-w-full max-h-[60vh] rounded-lg object-contain" />
               )}
