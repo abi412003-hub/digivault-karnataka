@@ -111,9 +111,9 @@ const RegisterType = () => {
               />
               <label htmlFor="terms" className="text-sm text-muted-foreground leading-relaxed">
                 I agree to the{" "}
-                <a href="/docs/terms-and-conditions.pdf" target="_blank" rel="noopener noreferrer" className="text-primary underline">Terms & Conditions</a>{" "}
+                <a href="/terms-and-conditions" target="_blank" rel="noopener noreferrer" className="text-primary underline">Terms & Conditions</a>{" "}
                 and{" "}
-                <a href="/docs/privacy-policy.pdf" target="_blank" rel="noopener noreferrer" className="text-primary underline">Privacy Policy</a>.
+                <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-primary underline">Privacy Policy</a>.
               </label>
             </div>
 
