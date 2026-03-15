@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import LocationPicker from "@/components/LocationPicker";
 import { ArrowLeft, Camera, ChevronDown, MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -111,6 +112,7 @@ const RegisterForm = () => {
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
   const [saving, setSaving] = useState(false);
+  const [showMap, setShowMap] = useState(false);
 
   /* cascading lists */
   const districtOptions = division ? districtsByDivision[division] ?? [] : [];
@@ -259,9 +261,14 @@ const RegisterForm = () => {
         </div>
       </div>
 
-      <button className="flex items-center gap-2 text-sm text-primary min-h-[44px]">
+      <button
+        onClick={() => setShowMap(true)}
+        className="flex items-center gap-2 text-sm text-primary min-h-[44px]"
+      >
         <MapPin size={18} className="text-destructive" />
-        Select the location
+        {latitude && longitude
+          ? `📍 ${Number(latitude).toFixed(4)}°N, ${Number(longitude).toFixed(4)}°E`
+          : "Select the location"}
       </button>
     </section>
   );
@@ -629,6 +636,17 @@ const RegisterForm = () => {
           {saving ? "Saving..." : "Save & Next"}
         </Button>
       </div>
+      <LocationPicker
+        isOpen={showMap}
+        onClose={() => setShowMap(false)}
+        onSelect={(lat, lng) => {
+          setLatitude(String(lat.toFixed(6)));
+          setLongitude(String(lng.toFixed(6)));
+          setShowMap(false);
+        }}
+        initialLat={latitude ? Number(latitude) : undefined}
+        initialLng={longitude ? Number(longitude) : undefined}
+      />
     </div>
   );
 };
