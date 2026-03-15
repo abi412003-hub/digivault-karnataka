@@ -1,21 +1,16 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, ArrowUpFromLine, Eye, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { createRecord } from "@/lib/api";
+import { createRecord, fetchOne } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
-const defaultDocs = [
+const fallbackDocs = [
   "Sale Deed / Registered Deed",
   "Mother Deed / Parent Deed",
   "Gift Deed / Partition Deed / Will",
   "Latest Property Tax Receipt",
-  "Electricity / BESCOM Connection ID",
-  "Property Survey Sketch / Layout Plan",
-  "Utility Bill / Address Proof",
-  "Property Photographs",
-  "No Objection Certificate (NOC)",
   "Encumbrance Certificate (EC)",
 ];
 
@@ -23,6 +18,7 @@ interface DocState {
   label: string;
   file: File | null;
   isNA: boolean;
+  isMandatory: boolean;
 }
 
 const ServiceDocs = () => {
@@ -32,10 +28,40 @@ const ServiceDocs = () => {
   const { toast } = useToast();
   const fileRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [serviceName, setServiceName] = useState("");
 
   const [docs, setDocs] = useState<DocState[]>(
-    defaultDocs.map((label) => ({ label, file: null, isNA: false }))
+    fallbackDocs.map((label) => ({ label, file: null, isNA: false, isMandatory: true }))
   );
+
+  // Fetch required documents from the selected service
+  useEffect(() => {
+    if (!srId) return;
+    fetchOne("DigiVault Service Request", srId)
+      .then(async (sr) => {
+        const mainService = sr?.main_service || "";
+        setServiceName(mainService);
+        if (!mainService) { setLoading(false); return; }
+
+        // Fetch the service's required_documents child table
+        const svcData = await fetchOne("DigiVault Service", mainService);
+        const reqDocs = svcData?.required_documents || [];
+
+        if (reqDocs.length > 0) {
+          setDocs(
+            reqDocs.map((d: { document_title: string; is_mandatory: number }) => ({
+              label: d.document_title || "Document",
+              file: null,
+              isNA: false,
+              isMandatory: d.is_mandatory === 1,
+            }))
+          );
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [srId]);
 
   const toggleNA = (idx: number) => {
     setDocs((prev) => {

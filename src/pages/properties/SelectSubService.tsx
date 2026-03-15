@@ -71,31 +71,47 @@ const SelectSubService = () => {
   };
 
   const createServiceRequest = async (mainService: string, subService: string) => {
-    if (projectId) {
-      setSaving(true);
-      try {
-        const srRes = await createRecord("DigiVault Service Request", {
+    setSaving(true);
+    try {
+      let projId = projectId;
+
+      // If no project exists, create one automatically
+      if (!projId) {
+        const projName = `${mainService}${subService ? " - " + subService : ""}`;
+        const projRes = await createRecord("DigiVault Project", {
+          project_name: projName,
           client: auth.client_id,
-          project: projectId,
-          property: id,
-          main_service: mainService,
-          sub_service: subService,
-          request_status: "Documents Pending",
-          request_date: new Date().toISOString().split("T")[0],
+          project_status: "In Progress",
+          service: mainService,
         });
-        const srName = srRes?.data?.name || "";
-        await srTransition("sr_created", srName).catch(() => {});
-        toast({ title: "Service request created!" });
-        navigate(`/service-request/${encodeURIComponent(srName)}/common-docs`, { replace: true });
-      } catch {
-        toast({ title: "Failed to create service request", variant: "destructive" });
-      } finally {
-        setSaving(false);
+        projId = projRes?.data?.name || "";
+        if (!projId) {
+          toast({ title: "Failed to create project", variant: "destructive" });
+          setSaving(false);
+          return;
+        }
       }
-    } else {
-      navigate(
-        `/create-project?property=${encodeURIComponent(id!)}&main_service=${encodeURIComponent(mainService)}&sub_service=${encodeURIComponent(subService)}`
-      );
+
+      // Create the service request
+      const srRes = await createRecord("DigiVault Service Request", {
+        client: auth.client_id,
+        project: projId,
+        property: id,
+        main_service: mainService,
+        sub_service: subService,
+        request_status: "Documents Pending",
+        request_date: new Date().toISOString().split("T")[0],
+      });
+      const srName = srRes?.data?.name || "";
+      await srTransition("sr_created", srName).catch(() => {});
+      toast({ title: "Service request created!" });
+
+      // Go directly to common documents upload
+      navigate(`/service-request/${encodeURIComponent(srName)}/common-docs`, { replace: true });
+    } catch {
+      toast({ title: "Failed to create service request", variant: "destructive" });
+    } finally {
+      setSaving(false);
     }
   };
 
