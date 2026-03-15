@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,43 +6,58 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { createRecord } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { useFormDraft, hasDraft } from "@/hooks/useFormDraft";
+import { validateForm, type FormRules } from "@/lib/validation";
+import { RequiredLabel, OptionalLabel } from "@/components/RequiredLabel";
+import DraftIndicator from "@/components/DraftIndicator";
+
+const DRAFT_KEY = "create-project";
 
 const CreateProject = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const propertyId = searchParams.get("property") || "";
-  const mainService = searchParams.get("main_service") || "";
-  const subService = searchParams.get("sub_service") || "";
   const { auth } = useAuth();
   const { toast } = useToast();
 
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
+  const hadDraft = useRef(hasDraft(DRAFT_KEY));
+  const [form, setField, clearDraft, , lastSaved] = useFormDraft(DRAFT_KEY, { title: "", description: "" });
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [shakeBtn, setShakeBtn] = useState(false);
+
+  useEffect(() => {
+    if (hadDraft.current) toast({ title: "Draft found — continuing your project" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleNext = async () => {
-    if (!title.trim()) {
-      toast({ title: "Please enter a project title", variant: "destructive" });
+    const rules: FormRules = { title: { required: true, minLength: 2, message: "Project title is required" } };
+    const result = validateForm(form, rules);
+    setErrors(result.errors);
+    if (!result.valid) {
+      setShakeBtn(true);
+      setTimeout(() => setShakeBtn(false), 400);
       return;
     }
+
     setSaving(true);
     try {
       const projRes = await createRecord("DigiVault Project", {
-        project_name: title,
-        project_description: description,
+        project_name: form.title,
+        project_description: form.description,
         client: auth.client_id,
         project_status: "Draft",
       });
       const projectName = projRes?.data?.name;
-
       if (!projectName) {
         toast({ title: "Failed to create project — no ID returned", variant: "destructive" });
         setSaving(false);
         return;
       }
-
+      clearDraft();
       toast({ title: "Project created!" });
-      navigate(`/project/${encodeURIComponent(projectName)}/property-edit?name=${encodeURIComponent(title)}`, { replace: true });
+      navigate(`/project/${encodeURIComponent(projectName)}/property-edit?name=${encodeURIComponent(form.title)}`, { replace: true });
     } catch {
       toast({ title: "Failed to create project", variant: "destructive" });
     } finally {
@@ -50,9 +65,15 @@ const CreateProject = () => {
     }
   };
 
+  const handleStartFresh = () => {
+    clearDraft();
+    setField("title", "");
+    setField("description", "");
+    setErrors({});
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      {/* Header */}
       <div className="flex items-center px-4 h-14 border-b border-border">
         <button onClick={() => navigate(-1)} className="min-h-[44px] min-w-[44px] flex items-center justify-center -ml-2">
           <ArrowLeft size={22} className="text-foreground" />
@@ -60,7 +81,6 @@ const CreateProject = () => {
       </div>
 
       <div className="flex-1 px-4 py-6 space-y-6">
-        {/* Welcome */}
         <div className="text-center space-y-1">
           <h1 className="text-xl font-bold text-foreground">Welcome to e-DigiVault</h1>
           <p className="text-sm text-muted-foreground">Secure Access to Documents</p>
@@ -68,25 +88,29 @@ const CreateProject = () => {
 
         <div className="h-px bg-border" />
 
-        {/* Form */}
         <div className="space-y-5">
-          <h2 className="text-base font-bold text-foreground">Create New Project</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold text-foreground">Create New Project</h2>
+          </div>
+          <DraftIndicator lastSaved={lastSaved} onStartFresh={handleStartFresh} showStartFresh={hadDraft.current} />
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Project Title</label>
+          <div className="space-y-2" data-field="title">
+            <RequiredLabel>Project Title</RequiredLabel>
             <Input
               placeholder="Enter your Project Title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              value={form.title}
+              onChange={(e) => setField("title", e.target.value)}
+              className={errors.title ? "border-destructive ring-1 ring-destructive" : ""}
             />
+            {errors.title && <p className="text-xs text-destructive mt-1">{errors.title}</p>}
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Project Description</label>
+            <OptionalLabel>Project Description</OptionalLabel>
             <Input
               placeholder="Write the description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              value={form.description}
+              onChange={(e) => setField("description", e.target.value)}
             />
           </div>
 
@@ -94,7 +118,7 @@ const CreateProject = () => {
             <Button
               onClick={handleNext}
               disabled={saving}
-              className="w-[120px] bg-[hsl(217_91%_53%)] hover:bg-[hsl(217_91%_45%)] text-white"
+              className={`w-[120px] bg-[hsl(217_91%_53%)] hover:bg-[hsl(217_91%_45%)] text-white ${shakeBtn ? "animate-[shake_0.3s]" : ""}`}
             >
               {saving ? "Creating…" : "Next"}
             </Button>
