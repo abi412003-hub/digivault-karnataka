@@ -1,19 +1,25 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, ChevronRight } from "lucide-react";
+import onboarding1 from "@/assets/onboarding-1.jpeg";
+import onboarding2 from "@/assets/onboarding-2.jpeg";
+import onboarding3 from "@/assets/onboarding-3.jpeg";
 
 const pages = [
   {
     title: "Upload with Confidence",
     description: "Moderators can securely upload documents with detailed metadata.",
+    image: onboarding1,
   },
   {
     title: "Safe and Secure",
     description: "In-Charge roles review, verify, or reject documents — transparently.",
+    image: onboarding2,
   },
   {
     title: "Track Everything",
     description: "Real-time tracking of all your property documents and services.",
+    image: onboarding3,
   },
 ];
 
