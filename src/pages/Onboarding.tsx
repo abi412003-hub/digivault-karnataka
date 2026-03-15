@@ -54,8 +54,8 @@ const Onboarding = () => {
       {/* Content */}
       <div className="flex-1 flex flex-col items-center justify-center gap-6">
         {/* Illustration placeholder */}
-        <div className="w-full max-w-[300px] h-[250px] rounded-2xl bg-secondary flex items-center justify-center">
-          <span className="text-muted-foreground text-sm">Illustration</span>
+        <div className="w-full max-w-[300px] h-[250px] rounded-2xl bg-secondary flex items-center justify-center overflow-hidden">
+          <img src={pages[current].image} alt={pages[current].title} className="w-full h-full object-contain" />
         </div>
 
         <h2 className="text-xl font-bold text-primary text-center">{pages[current].title}</h2>
