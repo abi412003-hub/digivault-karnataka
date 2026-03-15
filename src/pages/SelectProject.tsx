@@ -48,24 +48,28 @@ const SelectProject = () => {
     setDeleting(true);
     try {
       // Delete all service requests under this project
-      const srs = srsByProperty;
-      const projectProps = propertiesByProject[projName] || [];
-      for (const prop of projectProps) {
-        const propSRs = srs[prop.name] || [];
-        for (const sr of propSRs) {
-          await deleteRecord("DigiVault Service Request", sr.name).catch(() => {});
-        }
-        // Delete the property
-        await deleteRecord("DigiVault Property", prop.name).catch(() => {});
-      }
-      // Also delete any SRs directly linked to this project but no property
+      // Collect all SRs for this project
       const allSRs = await fetchList(
         "DigiVault Service Request",
         ["name"],
         [["project", "=", projName]]
       );
+      // Delete linked Client Documents for each SR first, then the SR
       for (const sr of allSRs || []) {
+        const linkedDocs = await fetchList(
+          "DigiVault Client Document",
+          ["name"],
+          [["service_request", "=", sr.name]]
+        );
+        for (const doc of linkedDocs || []) {
+          await deleteRecord("DigiVault Client Document", doc.name).catch(() => {});
+        }
         await deleteRecord("DigiVault Service Request", sr.name).catch(() => {});
+      }
+      // Delete properties linked to this project
+      const projectProps = propertiesByProject[projName] || [];
+      for (const prop of projectProps) {
+        await deleteRecord("DigiVault Property", prop.name).catch(() => {});
       }
       // Delete the project itself
       await deleteRecord("DigiVault Project", projName);
