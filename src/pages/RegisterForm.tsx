@@ -112,6 +112,7 @@ const RegisterForm = () => {
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
   const [saving, setSaving] = useState(false);
+  const [showMap, setShowMap] = useState(false);
 
   /* cascading lists */
   const districtOptions = division ? districtsByDivision[division] ?? [] : [];
