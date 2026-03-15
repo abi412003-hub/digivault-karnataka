@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, FileText, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { fetchList, updateRecord, fetchOne } from "@/lib/api";
+import { fetchList, updateRecord, fetchOne, createRecord } from "@/lib/api";
 import { srTransition } from "@/lib/workflow";
 import { useToast } from "@/hooks/use-toast";
 
@@ -191,19 +191,54 @@ const DocCards = () => {
         {naDocs.length > 0 && (
           <section className="space-y-3">
             <h3 className="text-sm font-bold text-foreground">Not Available Documents</h3>
+            <p className="text-xs text-muted-foreground">
+              These documents were marked as not available. A separate service request will be created for each to help you obtain them.
+            </p>
             <div className="grid grid-cols-3 gap-3">
               {naDocs.map((doc) => (
                 <div
                   key={doc.name}
-                  className="rounded-xl bg-[hsl(220_9%_46%)] p-3 min-h-[80px] flex flex-col items-center justify-center gap-1 relative"
+                  className="rounded-xl bg-amber-100 border border-amber-300 p-3 min-h-[80px] flex flex-col items-center justify-center gap-1 relative"
                 >
-                  <FileText size={14} className="text-white/70 absolute top-2 right-2" />
-                  <span className="text-white text-[11px] font-medium text-center leading-tight">
+                  <FileText size={14} className="text-amber-600/70 absolute top-2 right-2" />
+                  <span className="text-amber-800 text-[11px] font-medium text-center leading-tight">
                     {shortName(doc.document_title)}
                   </span>
+                  <span className="text-[9px] text-amber-600 font-semibold">NOT AVAILABLE</span>
                 </div>
               ))}
             </div>
+            <Button
+              variant="outline"
+              className="w-full h-11 border-amber-400 text-amber-700 hover:bg-amber-50"
+              disabled={saving}
+              onClick={async () => {
+                setSaving(true);
+                try {
+                  // Create a new SR for each NA document
+                  let created = 0;
+                  for (const doc of naDocs) {
+                    await createRecord("DigiVault Service Request", {
+                      client: auth.client_id,
+                      project: sr?.project || "",
+                      property: sr?.property || "",
+                      main_service: sr?.main_service || "",
+                      sub_service: doc.document_title,
+                      request_status: "Draft",
+                      request_date: new Date().toISOString().split("T")[0],
+                    }).catch(() => {});
+                    created++;
+                  }
+                  toast({ title: `${created} service request${created > 1 ? "s" : ""} created for unavailable documents` });
+                } catch {
+                  toast({ title: "Failed to create service requests", variant: "destructive" });
+                } finally {
+                  setSaving(false);
+                }
+              }}
+            >
+              Create {naDocs.length} Service Request{naDocs.length > 1 ? "s" : ""} for N/A Documents
+            </Button>
           </section>
         )}
       </div>
