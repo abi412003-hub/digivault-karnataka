@@ -245,7 +245,7 @@ const RegisterForm = () => {
   };
 
   /* ── Address section (shared) ── */
-  const AddressSection = ({ heading = "Address" }: { heading?: string }) => (
+  const renderAddress = (heading = "Address") => (
     <section className="space-y-4">
       <h2 className="text-base font-bold text-foreground">{heading}</h2>
 
@@ -617,7 +617,7 @@ const RegisterForm = () => {
             </section>
 
             <div className="border-t border-border" />
-            <AddressSection heading="Office Address" />
+            {renderAddress("Office Address")}
           </>
         ) : (
           <>
@@ -798,7 +798,7 @@ const RegisterForm = () => {
               </div>
             </section>
 
-            <AddressSection />
+            {renderAddress()}
           </>
         )}
       </div>

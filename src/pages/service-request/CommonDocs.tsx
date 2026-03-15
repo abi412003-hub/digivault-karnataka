@@ -23,6 +23,21 @@ const sections = [
   { name: "DOB Certificate", mandatory: true },
 ];
 
+const UploadBtn = ({ label, file, onClick }: { label: string; file: File | null; onClick: () => void }) => (
+  <button onClick={onClick}
+    className="flex-1 flex items-center justify-between rounded-lg border border-input bg-background px-3 py-3 min-h-[44px] text-sm">
+    {file ? (
+      <span className="flex items-center gap-1.5 text-[hsl(142_76%_36%)] truncate">
+        <CheckCircle size={16} />
+        <span className="truncate">{file.name}</span>
+      </span>
+    ) : (
+      <span className="text-muted-foreground">{label}</span>
+    )}
+    <ArrowUpFromLine size={16} className="text-muted-foreground flex-shrink-0 ml-2" />
+  </button>
+);
+
 const CommonDocs = () => {
   const { srId } = useParams<{ srId: string }>();
   const navigate = useNavigate();
@@ -106,20 +121,7 @@ const CommonDocs = () => {
     navigate(`/service-request/${encodeURIComponent(srId!)}/service-docs`, { replace: true });
   };
 
-  const UploadBtn = ({ label, file, onClick }: { label: string; file: File | null; onClick: () => void }) => (
-    <button onClick={onClick}
-      className="flex-1 flex items-center justify-between rounded-lg border border-input bg-background px-3 py-3 min-h-[44px] text-sm">
-      {file ? (
-        <span className="flex items-center gap-1.5 text-[hsl(142_76%_36%)] truncate">
-          <CheckCircle size={16} />
-          <span className="truncate">{file.name}</span>
-        </span>
-      ) : (
-        <span className="text-muted-foreground">{label}</span>
-      )}
-      <ArrowUpFromLine size={16} className="text-muted-foreground flex-shrink-0 ml-2" />
-    </button>
-  );
+
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
