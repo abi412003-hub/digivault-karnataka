@@ -9,7 +9,7 @@ import { createRecord } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { useFormDraft, hasDraft } from "@/hooks/useFormDraft";
 import { validateForm, PATTERNS, type FormRules } from "@/lib/validation";
-import { RequiredLabel, OptionalLabel } from "@/components/RequiredLabel";
+import { RequiredLabel } from "@/components/RequiredLabel";
 import DraftIndicator from "@/components/DraftIndicator";
 import {
   divisions,
@@ -186,35 +186,51 @@ const RegisterForm = () => {
 
     if (isOrgType) {
       rules.companyName = { required: true, minLength: 2, message: "Company name is required" };
-      if (form.gstinPan) {
-        rules.gstinPan = { pattern: /^[A-Z0-9]{15}$/i, message: "GSTIN must be 15 alphanumeric characters" };
-      }
+      rules.companyType = { required: true, message: "Company type is required" };
+      rules.gstinPan = { required: true, pattern: /^[A-Z0-9]{15}$/i, message: "GSTIN must be 15 alphanumeric characters" };
+      rules.businessRegNo = { required: true, message: "Business registration number is required" };
+      rules.natureOfBusiness = { required: true, message: "Nature of business is required" };
+      rules.companyWebsite = { required: true, message: "Company website is required" };
+      rules.numEmployees = { required: true, message: "Number of employees is required" };
+      rules.annualRevenue = { required: true, message: "Annual revenue range is required" };
+      rules.dateOfEstablishment = { required: true, message: "Date of establishment is required" };
+      rules.ownerName = { required: true, message: "Owner name is required" };
+      rules.ownershipStatus = { required: true, message: "Ownership status is required" };
+      rules.incorporationNumber = { required: true, message: "Incorporation number is required" };
+      rules.email = { required: true, pattern: PATTERNS.email, message: "Enter a valid email" };
     } else {
       rules.fullName = { required: true, minLength: 2, message: "Full name is required" };
       rules.relationName = { required: true, message: "Relation name is required" };
       rules.dateOfBirth = { required: true, message: "Date of birth is required" };
+      rules.age = { required: true, message: "Age is required" };
+      rules.email = { required: true, pattern: PATTERNS.email, message: "Enter a valid email" };
+      rules.whatsappNo = { required: true, message: "WhatsApp number is required" };
       rules.aadhaarNo = { required: true, pattern: /^\d{4}\s?\d{4}\s?\d{4}$/, message: "Enter valid 12-digit Aadhaar" };
       rules.panNo = { required: true, pattern: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/i, message: "Enter valid PAN (e.g. ABCDE1234F)" };
       rules.doorNo = { required: true, message: "Door number is required" };
+      rules.buildingName = { required: true, message: "Building name is required" };
+      rules.crossRoad = { required: true, message: "Cross road is required" };
+      rules.mainRoad = { required: true, message: "Main road is required" };
+      rules.landmark = { required: true, message: "Landmark is required" };
       rules.areaName = { required: true, message: "Area name is required" };
     }
 
-    if (form.email) {
-      rules.email = { pattern: PATTERNS.email, message: "Enter a valid email" };
-    }
-
-    rules.division = { required: true, message: "Please select a division" };
+    rules.division = { required: true, message: "Please select a zone/division" };
     rules.district = { required: true, message: "Please select a district" };
     rules.taluk = { required: true, message: "Please select a taluk" };
     rules.urbanRural = { required: true, message: "Please select Urban or Rural" };
     rules.pincode = { required: true, pattern: PATTERNS.pincode, message: "Enter a valid 6-digit pincode" };
+    rules.postOffice = { required: true, message: "Post office is required" };
+    rules.bdReferralCode = { required: true, message: "BD Referral Code is required" };
 
     if (form.urbanRural === "Urban") {
       rules.cmcType = { required: true, message: "Please select CMC/TMC type" };
       rules.pattana = { required: true, message: "Please select Pattana Panchayathi" };
+      rules.ward = { required: true, message: "Ward number is required" };
     }
     if (form.urbanRural === "Rural") {
       rules.gramPanchayathi = { required: true, message: "Please select Gram Panchayathi" };
+      rules.village = { required: true, message: "Village is required" };
     }
 
     const result = validateForm(form, rules);
@@ -242,21 +258,25 @@ const RegisterForm = () => {
             {errors.doorNo && <p className="text-xs text-destructive mt-1">{errors.doorNo}</p>}
           </div>
           <div className="space-y-1">
-            <OptionalLabel>Building Name</OptionalLabel>
-            <Input placeholder="Lakshmi Nivasa" value={form.buildingName} onChange={(e) => setField("buildingName", e.target.value)} className="h-12" />
+            <RequiredLabel>Building Name</RequiredLabel>
+            <Input placeholder="Lakshmi Nivasa" value={form.buildingName} onChange={(e) => setField("buildingName", e.target.value)} className={`h-12 ${errors.buildingName ? "border-destructive ring-1 ring-destructive" : ""}`} />
           </div>
+            {errors.buildingName && <p className="text-xs text-destructive mt-1">{errors.buildingName}</p>}
           <div className="space-y-1">
-            <OptionalLabel>Cross Road</OptionalLabel>
-            <Input placeholder="2nd Cross" value={form.crossRoad} onChange={(e) => setField("crossRoad", e.target.value)} className="h-12" />
+            <RequiredLabel>Cross Road</RequiredLabel>
+            <Input placeholder="2nd Cross" value={form.crossRoad} onChange={(e) => setField("crossRoad", e.target.value)} className={`h-12 ${errors.crossRoad ? "border-destructive ring-1 ring-destructive" : ""}`} />
           </div>
+            {errors.crossRoad && <p className="text-xs text-destructive mt-1">{errors.crossRoad}</p>}
           <div className="space-y-1">
-            <OptionalLabel>Main Road</OptionalLabel>
-            <Input placeholder="Bannerghatta Main" value={form.mainRoad} onChange={(e) => setField("mainRoad", e.target.value)} className="h-12" />
+            <RequiredLabel>Main Road</RequiredLabel>
+            <Input placeholder="Bannerghatta Main" value={form.mainRoad} onChange={(e) => setField("mainRoad", e.target.value)} className={`h-12 ${errors.mainRoad ? "border-destructive ring-1 ring-destructive" : ""}`} />
           </div>
+            {errors.mainRoad && <p className="text-xs text-destructive mt-1">{errors.mainRoad}</p>}
           <div className="space-y-1">
-            <OptionalLabel>Landmark</OptionalLabel>
-            <Input placeholder="Near Meenakshi Temple" value={form.landmark} onChange={(e) => setField("landmark", e.target.value)} className="h-12" />
+            <RequiredLabel>Landmark</RequiredLabel>
+            <Input placeholder="Near Meenakshi Temple" value={form.landmark} onChange={(e) => setField("landmark", e.target.value)} className={`h-12 ${errors.landmark ? "border-destructive ring-1 ring-destructive" : ""}`} />
           </div>
+            {errors.landmark && <p className="text-xs text-destructive mt-1">{errors.landmark}</p>}
           <div className="space-y-1" data-field="areaName">
             <RequiredLabel>Area Name</RequiredLabel>
             <Input placeholder="Arekere MICO Layout" value={form.areaName} onChange={(e) => setField("areaName", e.target.value)} className={`h-12 ${errors.areaName ? "border-destructive ring-1 ring-destructive" : ""}`} />
@@ -303,7 +323,7 @@ const RegisterForm = () => {
           <div data-field="pattana">
             <Dropdown label="Select Pattana Panchayathi" value={form.pattana} onChange={(v) => setField("pattana", v)} options={pattanaOptions} placeholder={form.taluk ? "Select Pattana Panchayathi" : "Select Taluk first"} required error={errors.pattana} />
           </div>
-          <Dropdown label="Urban Ward" value={form.ward} onChange={(v) => setField("ward", v)} options={urbanWards} placeholder="Select Ward" />
+          <Dropdown label="Urban Ward" value={form.ward} onChange={(v) => setField("ward", v)} options={urbanWards} placeholder="Select Ward" required error={errors.ward} />
         </div>
       )}
 
@@ -312,14 +332,15 @@ const RegisterForm = () => {
           <div data-field="gramPanchayathi">
             <Dropdown label="Select Gram Panchayathi" value={form.gramPanchayathi} onChange={(v) => setField("gramPanchayathi", v)} options={gpOptions} placeholder={form.taluk ? "Select Gram Panchayathi" : "Select Taluk first"} required error={errors.gramPanchayathi} />
           </div>
-          <Dropdown label="Village" value={form.village} onChange={(v) => setField("village", v)} options={villageOptions} placeholder={form.gramPanchayathi ? "Select Village" : "Select GP first"} />
+          <Dropdown label="Village" value={form.village} onChange={(v) => setField("village", v)} options={villageOptions} placeholder={form.gramPanchayathi ? "Select Village" : "Select GP first"} required error={errors.village} />
         </div>
       )}
 
       <div className="space-y-1">
-        <OptionalLabel>Post Office</OptionalLabel>
+        <RequiredLabel>Post Office</RequiredLabel>
         <Input placeholder="Ilanthila" value={form.postOffice} onChange={(e) => setField("postOffice", e.target.value)} className="h-12" />
       </div>
+            {errors.postOffice && <p className="text-xs text-destructive mt-1">{errors.postOffice}</p>}
 
       <div className="space-y-1" data-field="pincode">
         <RequiredLabel>Pincode</RequiredLabel>
@@ -345,11 +366,11 @@ const RegisterForm = () => {
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
-          <OptionalLabel>Latitude</OptionalLabel>
+          <RequiredLabel>Latitude</RequiredLabel>
           <Input placeholder="12.9716" value={form.latitude} onChange={(e) => setField("latitude", e.target.value)} className="h-12" />
         </div>
         <div className="space-y-1">
-          <OptionalLabel>Longitude</OptionalLabel>
+          <RequiredLabel>Longitude</RequiredLabel>
           <Input placeholder="77.5946" value={form.longitude} onChange={(e) => setField("longitude", e.target.value)} className="h-12" />
         </div>
       </div>
@@ -366,7 +387,7 @@ const RegisterForm = () => {
 
       {/* BD Referral Code */}
       <div className="space-y-1">
-        <OptionalLabel>BD Referral Code</OptionalLabel>
+        <RequiredLabel>BD Referral Code</RequiredLabel>
         <div className="flex gap-2">
           <Input
             placeholder="Type / Scan"
@@ -378,6 +399,7 @@ const RegisterForm = () => {
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground"><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>
           </button>
         </div>
+            {errors.bdReferralCode && <p className="text-xs text-destructive mt-1">{errors.bdReferralCode}</p>}
       </div>
     </section>
   );
@@ -529,7 +551,7 @@ const RegisterForm = () => {
               <Dropdown label="Company Type" value={form.companyType} onChange={(v) => setField("companyType", v)} options={companyTypes} placeholder="Select Company Type" />
 
               <div className="space-y-1" data-field="gstinPan">
-                <OptionalLabel>GSTIN / PAN</OptionalLabel>
+                <RequiredLabel>GSTIN / PAN</RequiredLabel>
                 <Input
                   placeholder="e.g. 22AAAAA0000A1Z5"
                   value={form.gstinPan}
@@ -540,49 +562,49 @@ const RegisterForm = () => {
               </div>
 
               <div className="space-y-1">
-                <OptionalLabel>Business Registration Number</OptionalLabel>
+                <RequiredLabel>Business Registration Number</RequiredLabel>
                 <Input placeholder="Enter registration number" value={form.businessRegNo} onChange={(e) => setField("businessRegNo", e.target.value)} className="h-12" />
               </div>
 
               <div className="space-y-1">
-                <OptionalLabel>Nature of Business</OptionalLabel>
+                <RequiredLabel>Nature of Business</RequiredLabel>
                 <Input placeholder="e.g. Real Estate, Agriculture" value={form.natureOfBusiness} onChange={(e) => setField("natureOfBusiness", e.target.value)} className="h-12" />
               </div>
 
               <div className="space-y-1">
-                <OptionalLabel>Company Website</OptionalLabel>
+                <RequiredLabel>Company Website</RequiredLabel>
                 <Input placeholder="https://example.com" value={form.companyWebsite} onChange={(e) => setField("companyWebsite", e.target.value)} className="h-12" />
               </div>
 
               <div className="space-y-1">
-                <OptionalLabel>Number of Employees</OptionalLabel>
+                <RequiredLabel>Number of Employees</RequiredLabel>
                 <Input type="number" placeholder="e.g. 50" value={form.numEmployees} onChange={(e) => setField("numEmployees", e.target.value)} className="h-12" />
               </div>
 
               <Dropdown label="Annual Revenue Range" value={form.annualRevenue} onChange={(v) => setField("annualRevenue", v)} options={revenueRanges} placeholder="Select Range" />
 
               <div className="space-y-1">
-                <OptionalLabel>Date of Establishment</OptionalLabel>
+                <RequiredLabel>Date of Establishment</RequiredLabel>
                 <Input type="date" value={form.dateOfEstablishment} onChange={(e) => setField("dateOfEstablishment", e.target.value)} className="h-12" />
               </div>
 
               <div className="space-y-1">
-                <OptionalLabel>Owner Name</OptionalLabel>
+                <RequiredLabel>Owner Name</RequiredLabel>
                 <Input placeholder="Enter owner name" value={form.ownerName} onChange={(e) => setField("ownerName", e.target.value)} className="h-12" />
               </div>
 
               <div className="space-y-1">
-                <OptionalLabel>Ownership Status</OptionalLabel>
+                <RequiredLabel>Ownership Status</RequiredLabel>
                 <Input placeholder="e.g. Sole Proprietor, Partner" value={form.ownershipStatus} onChange={(e) => setField("ownershipStatus", e.target.value)} className="h-12" />
               </div>
 
               <div className="space-y-1">
-                <OptionalLabel>Incorporation Number</OptionalLabel>
+                <RequiredLabel>Incorporation Number</RequiredLabel>
                 <Input placeholder="Optional" value={form.incorporationNumber} onChange={(e) => setField("incorporationNumber", e.target.value)} className="h-12" />
               </div>
 
               <div className="space-y-1" data-field="email">
-                <OptionalLabel>Email</OptionalLabel>
+                <RequiredLabel>Email</RequiredLabel>
                 <Input
                   type="email"
                   placeholder="Enter company email"
@@ -666,6 +688,7 @@ const RegisterForm = () => {
                 />
                 {errors.dateOfBirth && <p className="text-xs text-destructive mt-1">{errors.dateOfBirth}</p>}
               </div>
+            {errors.age && <p className="text-xs text-destructive mt-1">{errors.age}</p>}
 
               {/* Age (auto-calculated, editable) */}
               <div className="space-y-1">
@@ -681,7 +704,7 @@ const RegisterForm = () => {
 
               {/* Profile Photo */}
               <div className="space-y-1">
-                <OptionalLabel>Profile Photo</OptionalLabel>
+                <RequiredLabel>Profile Photo</RequiredLabel>
                 <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
                 <button
                   onClick={() => fileRef.current?.click()}
@@ -700,7 +723,7 @@ const RegisterForm = () => {
 
               {/* Email */}
               <div className="space-y-1" data-field="email">
-                <OptionalLabel>Email</OptionalLabel>
+                <RequiredLabel>Email</RequiredLabel>
                 <Input
                   type="email"
                   placeholder="Rajeshkumar@gmail.com"
@@ -726,7 +749,7 @@ const RegisterForm = () => {
 
               {/* WhatsApp No */}
               <div className="space-y-1">
-                <OptionalLabel>WhatsApp No</OptionalLabel>
+                <RequiredLabel>WhatsApp No</RequiredLabel>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">+91</span>
                   <Input
@@ -736,6 +759,7 @@ const RegisterForm = () => {
                     className="h-12 pl-12"
                   />
                 </div>
+            {errors.whatsappNo && <p className="text-xs text-destructive mt-1">{errors.whatsappNo}</p>}
                 <button
                   type="button"
                   onClick={() => setField("whatsappNo", auth.phone?.replace("+91", "") || "")}
