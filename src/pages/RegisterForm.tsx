@@ -636,6 +636,17 @@ const RegisterForm = () => {
           {saving ? "Saving..." : "Save & Next"}
         </Button>
       </div>
+      <LocationPicker
+        isOpen={showMap}
+        onClose={() => setShowMap(false)}
+        onSelect={(lat, lng) => {
+          setLatitude(String(lat.toFixed(6)));
+          setLongitude(String(lng.toFixed(6)));
+          setShowMap(false);
+        }}
+        initialLat={latitude ? Number(latitude) : undefined}
+        initialLng={longitude ? Number(longitude) : undefined}
+      />
     </div>
   );
 };
