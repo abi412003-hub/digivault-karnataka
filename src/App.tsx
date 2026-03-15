@@ -8,6 +8,7 @@ import Splash from "./pages/Splash";
 import Onboarding from "./pages/Onboarding";
 import Login from "./pages/Login";
 import RegisterType from "./pages/RegisterType";
+import LandAggregatorType from "./pages/LandAggregatorType";
 import RegisterForm from "./pages/RegisterForm";
 import Dashboard from "./pages/Dashboard";
 import Properties from "./pages/Properties";
@@ -59,6 +60,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/register-type" element={<RegisterType />} />
             <Route path="/register-form" element={<RegisterForm />} />
+            <Route path="/register-aggregator-type" element={<LandAggregatorType />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/properties" element={<Properties />} />
             <Route path="/properties/add" element={<AddProperty />} />
