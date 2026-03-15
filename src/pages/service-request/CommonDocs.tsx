@@ -3,17 +3,23 @@ import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, ArrowUpFromLine, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { fetchOne } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 interface UploadPair {
   front: File | null;
   back: File | null;
 }
 
-const sections = ["Proof of identity", "Proof of Address", "DOB Certificate"];
+const sections = [
+  { name: "Proof of identity", mandatory: true },
+  { name: "Proof of Address", mandatory: true },
+  { name: "DOB Certificate", mandatory: false },
+];
 
 const CommonDocs = () => {
   const { srId } = useParams<{ srId: string }>();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [mainService, setMainService] = useState("");
   const [subService, setSubService] = useState("");
   const [uploads, setUploads] = useState<UploadPair[]>(sections.map(() => ({ front: null, back: null })));
@@ -41,6 +47,17 @@ const CommonDocs = () => {
     });
   };
 
+  const mandatoryCount = sections.filter((s) => s.mandatory).length;
+  const mandatoryUploaded = sections.filter((s, i) => s.mandatory && uploads[i].front).length;
+
+  const handleNext = () => {
+    if (mandatoryUploaded < mandatoryCount) {
+      toast({ title: `Please upload all mandatory documents (${mandatoryUploaded}/${mandatoryCount})`, variant: "destructive" });
+      return;
+    }
+    navigate(`/service-request/${encodeURIComponent(srId!)}/service-docs`, { replace: true });
+  };
+
   const UploadBtn = ({ label, file, onClick }: { label: string; file: File | null; onClick: () => void }) => (
     <button
       onClick={onClick}
@@ -60,7 +77,6 @@ const CommonDocs = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      {/* header */}
       <div className="flex items-center px-4 h-14 border-b border-border">
         <button onClick={() => navigate(-1)} className="min-h-[44px] min-w-[44px] flex items-center justify-center -ml-2">
           <ArrowLeft size={22} className="text-foreground" />
@@ -68,7 +84,6 @@ const CommonDocs = () => {
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-5 pb-28 space-y-5">
-        {/* info card */}
         <div className="rounded-xl overflow-hidden border border-border">
           <div className="bg-secondary px-4 py-3">
             <h2 className="text-center font-bold text-foreground text-lg">Upload Common Documents</h2>
@@ -85,46 +100,47 @@ const CommonDocs = () => {
           </div>
         </div>
 
-        {/* upload sections */}
+        {/* Progress bar */}
+        <div className="space-y-1">
+          <p className="text-xs text-muted-foreground">{mandatoryUploaded}/{mandatoryCount} mandatory documents uploaded</p>
+          <div className="h-2 rounded-full bg-muted overflow-hidden">
+            <div
+              className="h-full rounded-full bg-primary transition-all duration-300"
+              style={{ width: `${mandatoryCount ? (mandatoryUploaded / mandatoryCount) * 100 : 0}%` }}
+            />
+          </div>
+        </div>
+
         {sections.map((section, idx) => (
-          <div key={section} className="space-y-2">
-            <label className="text-sm font-bold text-primary">{section}</label>
+          <div key={section.name} className="space-y-2">
+            <label className="text-sm font-bold text-primary">
+              {section.name}
+              {section.mandatory ? (
+                <span className="text-destructive ml-1">*</span>
+              ) : (
+                <span className="text-muted-foreground text-xs font-normal ml-1">(optional)</span>
+              )}
+            </label>
             <div className="flex gap-3">
               <input
                 ref={(el) => { frontRefs.current[idx] = el; }}
-                type="file"
-                accept="image/*,.pdf"
-                className="hidden"
+                type="file" accept="image/*,.pdf" className="hidden"
                 onChange={(e) => handleFile(idx, "front", e.target.files?.[0] || null)}
               />
               <input
                 ref={(el) => { backRefs.current[idx] = el; }}
-                type="file"
-                accept="image/*,.pdf"
-                className="hidden"
+                type="file" accept="image/*,.pdf" className="hidden"
                 onChange={(e) => handleFile(idx, "back", e.target.files?.[0] || null)}
               />
-              <UploadBtn
-                label="Upload Front Side"
-                file={uploads[idx].front}
-                onClick={() => frontRefs.current[idx]?.click()}
-              />
-              <UploadBtn
-                label="Upload Back Side"
-                file={uploads[idx].back}
-                onClick={() => backRefs.current[idx]?.click()}
-              />
+              <UploadBtn label="Upload Front Side" file={uploads[idx].front} onClick={() => frontRefs.current[idx]?.click()} />
+              <UploadBtn label="Upload Back Side" file={uploads[idx].back} onClick={() => backRefs.current[idx]?.click()} />
             </div>
           </div>
         ))}
       </div>
 
-      {/* bottom button */}
       <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border px-4 py-4">
-        <Button
-          className="w-full h-12"
-          onClick={() => navigate(`/service-request/${encodeURIComponent(srId!)}/service-docs`, { replace: true })}
-        >
+        <Button className="w-full h-12" onClick={handleNext}>
           Next
         </Button>
       </div>

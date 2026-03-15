@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import LocationPicker from "@/components/LocationPicker";
 import { ArrowLeft, Camera, ChevronDown, MapPin } from "lucide-react";
@@ -7,6 +7,10 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { createRecord } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { useFormDraft, hasDraft } from "@/hooks/useFormDraft";
+import { validateForm, PATTERNS, type FormRules } from "@/lib/validation";
+import { RequiredLabel, OptionalLabel } from "@/components/RequiredLabel";
+import DraftIndicator from "@/components/DraftIndicator";
 import {
   divisions,
   districtsByDivision,
@@ -26,6 +30,8 @@ const Dropdown = ({
   options,
   placeholder = "Select",
   disabled = false,
+  error,
+  required,
 }: {
   label: string;
   value: string;
@@ -33,33 +39,35 @@ const Dropdown = ({
   options: string[];
   placeholder?: string;
   disabled?: boolean;
+  error?: string;
+  required?: boolean;
 }) => (
   <div className="space-y-1">
-    <label className="text-sm font-bold text-foreground">{label}</label>
+    {required ? <RequiredLabel>{label}</RequiredLabel> : <label className="text-sm font-bold text-foreground">{label}</label>}
     <div className="relative">
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className="w-full h-12 appearance-none rounded-lg border border-input bg-background px-4 pr-10 text-sm text-foreground disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-ring"
+        className={`w-full h-12 appearance-none rounded-lg border bg-background px-4 pr-10 text-sm text-foreground disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-ring ${
+          error ? "border-destructive ring-1 ring-destructive" : "border-input"
+        }`}
       >
         <option value="">{placeholder}</option>
         {options.map((o) => (
-          <option key={o} value={o}>
-            {o}
-          </option>
+          <option key={o} value={o}>{o}</option>
         ))}
       </select>
-      <ChevronDown
-        size={18}
-        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-      />
+      <ChevronDown size={18} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
     </div>
+    {error && <p className="text-xs text-destructive mt-1">{error}</p>}
   </div>
 );
 
 const companyTypes = ["Pvt.Ltd", "LLP", "Partnership", "Proprietary", "Other"];
 const revenueRanges = ["Below 50L", "50L-1Cr", "1Cr-1.5Cr", "1.5Cr-5Cr", "5Cr-10Cr", "Above 10Cr"];
+
+const DRAFT_KEY = "register-form";
 
 /* ── main form ──────────────────────────────────────────────── */
 const RegisterForm = () => {
@@ -67,82 +75,61 @@ const RegisterForm = () => {
   const { auth, setAuth, lookupClient } = useAuth();
   const { toast } = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLDivElement>(null);
 
   const isOrgType =
     auth.registrationType === "Organization" ||
     auth.registrationType === "Land Aggregator - Organisation";
 
-  // personal
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
+  const defaultValues = {
+    fullName: "", email: "", companyName: "", companyType: "", gstinPan: "",
+    businessRegNo: "", natureOfBusiness: "", companyWebsite: "", numEmployees: "",
+    annualRevenue: "", dateOfEstablishment: "", ownerName: "", ownershipStatus: "",
+    incorporationNumber: "", division: "", district: "", taluk: "",
+    urbanRural: "" as "Urban" | "Rural" | "", cmcType: "", pattana: "", ward: "",
+    gramPanchayathi: "", village: "", postOffice: "", pincode: "",
+    latitude: "", longitude: "",
+  };
+
+  const hadDraft = useRef(hasDraft(DRAFT_KEY));
+  const [form, setField, clearDraft, setMultiple, lastSaved] = useFormDraft(DRAFT_KEY, defaultValues);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-
-  // org fields
-  const [companyName, setCompanyName] = useState("");
-  const [companyType, setCompanyType] = useState("");
-  const [gstinPan, setGstinPan] = useState("");
-  const [businessRegNo, setBusinessRegNo] = useState("");
-  const [natureOfBusiness, setNatureOfBusiness] = useState("");
-  const [companyWebsite, setCompanyWebsite] = useState("");
-  const [numEmployees, setNumEmployees] = useState("");
-  const [annualRevenue, setAnnualRevenue] = useState("");
-  const [dateOfEstablishment, setDateOfEstablishment] = useState("");
-  const [ownerName, setOwnerName] = useState("");
-  const [ownershipStatus, setOwnershipStatus] = useState("");
-  const [incorporationNumber, setIncorporationNumber] = useState("");
-
-  // address
-  const [division, setDivision] = useState("");
-  const [district, setDistrict] = useState("");
-  const [taluk, setTaluk] = useState("");
-  const [urbanRural, setUrbanRural] = useState<"Urban" | "Rural" | "">("");
-
-  // urban
-  const [cmcType, setCmcType] = useState("");
-  const [pattana, setPattana] = useState("");
-  const [ward, setWard] = useState("");
-
-  // rural
-  const [gramPanchayathi, setGramPanchayathi] = useState("");
-  const [village, setVillage] = useState("");
-
-  // shared
-  const [postOffice, setPostOffice] = useState("");
-  const [pincode, setPincode] = useState("");
-  const [latitude, setLatitude] = useState("");
-  const [longitude, setLongitude] = useState("");
   const [saving, setSaving] = useState(false);
   const [showMap, setShowMap] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [shakeBtn, setShakeBtn] = useState(false);
+
+  useEffect(() => {
+    if (hadDraft.current) {
+      toast({ title: "Draft found — continuing your registration" });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleStartFresh = () => {
+    clearDraft();
+    setMultiple(defaultValues);
+    setErrors({});
+  };
 
   /* cascading lists */
-  const districtOptions = division ? districtsByDivision[division] ?? [] : [];
-  const talukOptions = district ? taluksByDistrict[district] ?? [] : [];
-  const pattanaOptions = taluk ? pattanaPanchayathiByTaluk[taluk] ?? [] : [];
-  const gpOptions = taluk ? gramPanchayathiByTaluk[taluk] ?? [] : [];
-  const villageOptions = gramPanchayathi ? villagesByGP[gramPanchayathi] ?? [] : [];
+  const districtOptions = form.division ? districtsByDivision[form.division] ?? [] : [];
+  const talukOptions = form.district ? taluksByDistrict[form.district] ?? [] : [];
+  const pattanaOptions = form.taluk ? pattanaPanchayathiByTaluk[form.taluk] ?? [] : [];
+  const gpOptions = form.taluk ? gramPanchayathiByTaluk[form.taluk] ?? [] : [];
+  const villageOptions = form.gramPanchayathi ? villagesByGP[form.gramPanchayathi] ?? [] : [];
 
-  /* reset children on parent change */
   const handleDivision = (v: string) => {
-    setDivision(v);
-    setDistrict("");
-    setTaluk("");
-    resetAreaFields();
+    setMultiple({ division: v, district: "", taluk: "", cmcType: "", pattana: "", ward: "", gramPanchayathi: "", village: "" } as any);
   };
   const handleDistrict = (v: string) => {
-    setDistrict(v);
-    setTaluk("");
-    resetAreaFields();
+    setMultiple({ district: v, taluk: "", cmcType: "", pattana: "", ward: "", gramPanchayathi: "", village: "" } as any);
   };
   const handleTaluk = (v: string) => {
-    setTaluk(v);
-    resetAreaFields();
+    setMultiple({ taluk: v, cmcType: "", pattana: "", ward: "", gramPanchayathi: "", village: "" } as any);
   };
-  const resetAreaFields = () => {
-    setCmcType("");
-    setPattana("");
-    setWard("");
-    setGramPanchayathi("");
-    setVillage("");
+  const handleUrbanRural = (v: "Urban" | "Rural") => {
+    setMultiple({ urbanRural: v, cmcType: "", pattana: "", ward: "", gramPanchayathi: "", village: "" } as any);
   };
 
   /* photo */
@@ -158,21 +145,71 @@ const RegisterForm = () => {
   /* generated address */
   const generatedAddress = useMemo(() => {
     const parts: string[] = [];
-    if (urbanRural === "Urban") {
-      if (cmcType) parts.push(cmcType);
-      if (pattana) parts.push(pattana);
-      if (ward) parts.push(ward);
-    } else if (urbanRural === "Rural") {
-      if (gramPanchayathi) parts.push(gramPanchayathi);
-      if (village) parts.push(village);
+    if (form.urbanRural === "Urban") {
+      if (form.cmcType) parts.push(form.cmcType);
+      if (form.pattana) parts.push(form.pattana);
+      if (form.ward) parts.push(form.ward);
+    } else if (form.urbanRural === "Rural") {
+      if (form.gramPanchayathi) parts.push(form.gramPanchayathi);
+      if (form.village) parts.push(form.village);
     }
-    if (taluk) parts.push(taluk);
-    if (district) parts.push(district);
-    if (division) parts.push(division);
+    if (form.taluk) parts.push(form.taluk);
+    if (form.district) parts.push(form.district);
+    if (form.division) parts.push(form.division);
     parts.push("KARNATAKA");
-    if (pincode) parts.push(pincode);
+    if (form.pincode) parts.push(form.pincode);
     return parts.join(", ");
-  }, [urbanRural, cmcType, pattana, ward, gramPanchayathi, village, taluk, district, division, pincode]);
+  }, [form.urbanRural, form.cmcType, form.pattana, form.ward, form.gramPanchayathi, form.village, form.taluk, form.district, form.division, form.pincode]);
+
+  /* scroll to first error */
+  const scrollToFirstError = useCallback((errs: Record<string, string>) => {
+    const firstKey = Object.keys(errs)[0];
+    if (!firstKey || !formRef.current) return;
+    const el = formRef.current.querySelector(`[data-field="${firstKey}"]`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, []);
+
+  /* validate */
+  const runValidation = (): boolean => {
+    const rules: FormRules = {};
+
+    if (isOrgType) {
+      rules.companyName = { required: true, minLength: 2, message: "Company name is required" };
+      if (form.gstinPan) {
+        rules.gstinPan = { pattern: /^[A-Z0-9]{15}$/i, message: "GSTIN must be 15 alphanumeric characters" };
+      }
+    } else {
+      rules.fullName = { required: true, minLength: 2, message: "Full name is required" };
+    }
+
+    if (form.email) {
+      rules.email = { pattern: PATTERNS.email, message: "Enter a valid email" };
+    }
+
+    rules.division = { required: true, message: "Please select a division" };
+    rules.district = { required: true, message: "Please select a district" };
+    rules.taluk = { required: true, message: "Please select a taluk" };
+    rules.urbanRural = { required: true, message: "Please select Urban or Rural" };
+    rules.pincode = { required: true, pattern: PATTERNS.pincode, message: "Enter a valid 6-digit pincode" };
+
+    if (form.urbanRural === "Urban") {
+      rules.cmcType = { required: true, message: "Please select CMC/TMC type" };
+      rules.pattana = { required: true, message: "Please select Pattana Panchayathi" };
+    }
+    if (form.urbanRural === "Rural") {
+      rules.gramPanchayathi = { required: true, message: "Please select Gram Panchayathi" };
+    }
+
+    const result = validateForm(form, rules);
+    setErrors(result.errors);
+
+    if (!result.valid) {
+      setShakeBtn(true);
+      setTimeout(() => setShakeBtn(false), 400);
+      scrollToFirstError(result.errors);
+    }
+    return result.valid;
+  };
 
   /* ── Address section (shared) ── */
   const AddressSection = ({ heading = "Address" }: { heading?: string }) => (
@@ -180,65 +217,72 @@ const RegisterForm = () => {
       <h2 className="text-base font-bold text-foreground">{heading}</h2>
 
       <Dropdown label="State" value="Karnataka" onChange={() => {}} options={["Karnataka"]} disabled />
-      <Dropdown label="Division" value={division} onChange={handleDivision} options={divisions} />
-      <Dropdown label="District" value={district} onChange={handleDistrict} options={districtOptions} placeholder={division ? "Select District" : "Select Division first"} />
-      <Dropdown label="Taluk" value={taluk} onChange={handleTaluk} options={talukOptions} placeholder={district ? "Select Taluk" : "Select District first"} />
+      <div data-field="division">
+        <Dropdown label="Division" value={form.division} onChange={handleDivision} options={divisions} required error={errors.division} />
+      </div>
+      <div data-field="district">
+        <Dropdown label="District" value={form.district} onChange={handleDistrict} options={districtOptions} placeholder={form.division ? "Select District" : "Select Division first"} required error={errors.district} />
+      </div>
+      <div data-field="taluk">
+        <Dropdown label="Taluk" value={form.taluk} onChange={handleTaluk} options={talukOptions} placeholder={form.district ? "Select Taluk" : "Select District first"} required error={errors.taluk} />
+      </div>
 
-      <div className="space-y-2">
-        <label className="text-sm font-bold text-foreground underline">Select Urban / Rural</label>
+      <div className="space-y-2" data-field="urbanRural">
+        <RequiredLabel>Select Urban / Rural</RequiredLabel>
         <div className="flex gap-6">
           {(["Urban", "Rural"] as const).map((opt) => (
             <button
               key={opt}
-              onClick={() => {
-                setUrbanRural(opt);
-                resetAreaFields();
-              }}
+              onClick={() => handleUrbanRural(opt)}
               className="flex items-center gap-2 min-h-[44px]"
             >
-              <span
-                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                  urbanRural === opt ? "border-primary" : "border-input"
-                }`}
-              >
-                {urbanRural === opt && <span className="w-2.5 h-2.5 rounded-full bg-primary" />}
+              <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${form.urbanRural === opt ? "border-primary" : "border-input"}`}>
+                {form.urbanRural === opt && <span className="w-2.5 h-2.5 rounded-full bg-primary" />}
               </span>
               <span className="text-sm text-foreground">{opt}</span>
             </button>
           ))}
         </div>
+        {errors.urbanRural && <p className="text-xs text-destructive mt-1">{errors.urbanRural}</p>}
       </div>
 
-      {urbanRural === "Urban" && (
+      {form.urbanRural === "Urban" && (
         <div className="space-y-4">
-          <Dropdown label="Select CMC/TMC/TP/GBA/MC" value={cmcType} onChange={setCmcType} options={cmcTmcOptions} />
-          <Dropdown label="Select Pattana Panchayathi" value={pattana} onChange={setPattana} options={pattanaOptions} placeholder={taluk ? "Select Pattana Panchayathi" : "Select Taluk first"} />
-          <Dropdown label="Urban" value={ward} onChange={setWard} options={urbanWards} placeholder="Select Ward" />
+          <div data-field="cmcType">
+            <Dropdown label="Select CMC/TMC/TP/GBA/MC" value={form.cmcType} onChange={(v) => setField("cmcType", v)} options={cmcTmcOptions} required error={errors.cmcType} />
+          </div>
+          <div data-field="pattana">
+            <Dropdown label="Select Pattana Panchayathi" value={form.pattana} onChange={(v) => setField("pattana", v)} options={pattanaOptions} placeholder={form.taluk ? "Select Pattana Panchayathi" : "Select Taluk first"} required error={errors.pattana} />
+          </div>
+          <Dropdown label="Urban Ward" value={form.ward} onChange={(v) => setField("ward", v)} options={urbanWards} placeholder="Select Ward" />
         </div>
       )}
 
-      {urbanRural === "Rural" && (
+      {form.urbanRural === "Rural" && (
         <div className="space-y-4">
-          <Dropdown label="Select Gram Panchayathi" value={gramPanchayathi} onChange={setGramPanchayathi} options={gpOptions} placeholder={taluk ? "Select Gram Panchayathi" : "Select Taluk first"} />
-          <Dropdown label="Village" value={village} onChange={setVillage} options={villageOptions} placeholder={gramPanchayathi ? "Select Village" : "Select GP first"} />
+          <div data-field="gramPanchayathi">
+            <Dropdown label="Select Gram Panchayathi" value={form.gramPanchayathi} onChange={(v) => setField("gramPanchayathi", v)} options={gpOptions} placeholder={form.taluk ? "Select Gram Panchayathi" : "Select Taluk first"} required error={errors.gramPanchayathi} />
+          </div>
+          <Dropdown label="Village" value={form.village} onChange={(v) => setField("village", v)} options={villageOptions} placeholder={form.gramPanchayathi ? "Select Village" : "Select GP first"} />
         </div>
       )}
 
       <div className="space-y-1">
-        <label className="text-sm font-bold text-foreground">Post Office</label>
-        <Input placeholder="Ilanthila" value={postOffice} onChange={(e) => setPostOffice(e.target.value)} className="h-12" />
+        <OptionalLabel>Post Office</OptionalLabel>
+        <Input placeholder="Ilanthila" value={form.postOffice} onChange={(e) => setField("postOffice", e.target.value)} className="h-12" />
       </div>
 
-      <div className="space-y-1">
-        <label className="text-sm font-bold text-foreground">Pincode</label>
+      <div className="space-y-1" data-field="pincode">
+        <RequiredLabel>Pincode</RequiredLabel>
         <Input
           type="number"
           placeholder="560016"
-          value={pincode}
-          onChange={(e) => setPincode(e.target.value.slice(0, 6))}
+          value={form.pincode}
+          onChange={(e) => setField("pincode", e.target.value.slice(0, 6))}
           maxLength={6}
-          className="h-12"
+          className={`h-12 ${errors.pincode ? "border-destructive ring-1 ring-destructive" : ""}`}
         />
+        {errors.pincode && <p className="text-xs text-destructive mt-1">{errors.pincode}</p>}
       </div>
 
       <div className="space-y-1">
@@ -252,12 +296,12 @@ const RegisterForm = () => {
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
-          <label className="text-sm font-bold text-foreground">Latitude</label>
-          <Input placeholder="12.9716" value={latitude} onChange={(e) => setLatitude(e.target.value)} className="h-12" />
+          <OptionalLabel>Latitude</OptionalLabel>
+          <Input placeholder="12.9716" value={form.latitude} onChange={(e) => setField("latitude", e.target.value)} className="h-12" />
         </div>
         <div className="space-y-1">
-          <label className="text-sm font-bold text-foreground">Longitude</label>
-          <Input placeholder="77.5946" value={longitude} onChange={(e) => setLongitude(e.target.value)} className="h-12" />
+          <OptionalLabel>Longitude</OptionalLabel>
+          <Input placeholder="77.5946" value={form.longitude} onChange={(e) => setField("longitude", e.target.value)} className="h-12" />
         </div>
       </div>
 
@@ -266,8 +310,8 @@ const RegisterForm = () => {
         className="flex items-center gap-2 text-sm text-primary min-h-[44px]"
       >
         <MapPin size={18} className="text-destructive" />
-        {latitude && longitude
-          ? `📍 ${Number(latitude).toFixed(4)}°N, ${Number(longitude).toFixed(4)}°E`
+        {form.latitude && form.longitude
+          ? `📍 ${Number(form.latitude).toFixed(4)}°N, ${Number(form.longitude).toFixed(4)}°E`
           : "Select the location"}
       </button>
     </section>
@@ -275,25 +319,10 @@ const RegisterForm = () => {
 
   /* submit */
   const handleSubmit = async () => {
-    if (isOrgType) {
-      if (!companyName.trim()) {
-        toast({ title: "Company Name is required", variant: "destructive" });
-        return;
-      }
-      if (gstinPan && !/^[A-Z0-9]{15}$/i.test(gstinPan.replace(/\s/g, ""))) {
-        toast({ title: "GSTIN must be 15 alphanumeric characters", variant: "destructive" });
-        return;
-      }
-    } else {
-      if (!fullName.trim()) {
-        toast({ title: "Full Name is required", variant: "destructive" });
-        return;
-      }
-    }
+    if (!runValidation()) return;
 
     setSaving(true);
     try {
-      // Check if client already exists with this phone (prevent duplicates)
       const existing = await lookupClient(auth.phone);
       if (existing) {
         setAuth({
@@ -303,33 +332,32 @@ const RegisterForm = () => {
           registrationType: existing.registration_type || auth.registrationType,
           supabaseUserId: auth.supabaseUserId || "",
         });
+        clearDraft();
         toast({ title: `Account already exists. Welcome back, ${existing.client_name}!` });
         navigate("/dashboard", { replace: true });
         return;
       }
 
       if (isOrgType) {
-        // Step 1: Create DigiVault Organisation
         const orgBody: Record<string, unknown> = {
-          company_name: companyName,
-          company_type: companyType,
-          gstin_pan: gstinPan,
-          business_registration_number: businessRegNo,
-          nature_of_business: natureOfBusiness,
-          company_website: companyWebsite,
-          number_of_employees: numEmployees ? Number(numEmployees) : undefined,
-          annual_revenue_range: annualRevenue,
-          date_of_establishment: dateOfEstablishment || undefined,
-          owner_name: ownerName,
-          ownership_status: ownershipStatus,
-          incorporation_number: incorporationNumber,
+          company_name: form.companyName,
+          company_type: form.companyType,
+          gstin_pan: form.gstinPan,
+          business_registration_number: form.businessRegNo,
+          nature_of_business: form.natureOfBusiness,
+          company_website: form.companyWebsite,
+          number_of_employees: form.numEmployees ? Number(form.numEmployees) : undefined,
+          annual_revenue_range: form.annualRevenue,
+          date_of_establishment: form.dateOfEstablishment || undefined,
+          owner_name: form.ownerName,
+          ownership_status: form.ownershipStatus,
+          incorporation_number: form.incorporationNumber,
           office_address: generatedAddress,
           org_state: "Karnataka",
-          org_district: district,
-          org_taluk: taluk,
-          org_pincode: pincode,
+          org_district: form.district,
+          org_taluk: form.taluk,
+          org_pincode: form.pincode,
         };
-        // Remove undefined keys
         Object.keys(orgBody).forEach((k) => orgBody[k] === undefined && delete orgBody[k]);
 
         let orgName: string;
@@ -337,83 +365,45 @@ const RegisterForm = () => {
           const orgRes = await createRecord("DigiVault Organisation", orgBody);
           orgName = orgRes?.data?.name;
           if (!orgName) throw new Error("Organisation creation returned no name");
-        } catch (err) {
+        } catch {
           toast({ title: "Failed to create organisation. Please try again.", variant: "destructive" });
           setSaving(false);
           return;
         }
 
-        // Step 2: Create DigiVault Client linked to org
         const clientBody = {
-          client_name: companyName,
-          email,
-          client_type: "Organisation",
-          registration_type: auth.registrationType,
-          organisation_link: orgName,
-          client_state: "Karnataka",
-          division,
-          client_district: district,
-          client_taluk: taluk,
-          urban_rural: urbanRural,
-          cmc_tmc_type: cmcType,
-          pattana_panchayathi: pattana,
-          ward,
-          post_office: postOffice,
-          client_pincode: pincode,
-          full_address_review: generatedAddress,
-          client_latitude: latitude,
-          client_longitude: longitude,
-          phone_no: auth.phone,
-          otp_verified: 1,
-          terms_accepted: 1,
-          client_status: "Active",
+          client_name: form.companyName, email: form.email, client_type: "Organisation",
+          registration_type: auth.registrationType, organisation_link: orgName,
+          client_state: "Karnataka", division: form.division, client_district: form.district,
+          client_taluk: form.taluk, urban_rural: form.urbanRural, cmc_tmc_type: form.cmcType,
+          pattana_panchayathi: form.pattana, ward: form.ward, post_office: form.postOffice,
+          client_pincode: form.pincode, full_address_review: generatedAddress,
+          client_latitude: form.latitude, client_longitude: form.longitude,
+          phone_no: auth.phone, otp_verified: 1, terms_accepted: 1, client_status: "Active",
         };
 
         const res = await createRecord("DigiVault Client", clientBody);
         const clientId = res?.data?.name || "CL-00001";
-        setAuth((prev) => ({
-          ...prev,
-          client_id: clientId,
-          name: companyName,
-          supabaseUserId: prev.supabaseUserId || "",
-        }));
+        setAuth((prev) => ({ ...prev, client_id: clientId, name: form.companyName, supabaseUserId: prev.supabaseUserId || "" }));
+        clearDraft();
         toast({ title: "Registration successful!" });
         navigate("/dashboard", { replace: true });
       } else {
-        // Individual flow (unchanged)
-        const clientType = "Personal";
         const body = {
-          client_name: fullName,
-          email,
-          client_type: clientType,
-          registration_type: auth.registrationType,
-          client_state: "Karnataka",
-          division,
-          client_district: district,
-          client_taluk: taluk,
-          urban_rural: urbanRural,
-          cmc_tmc_type: cmcType,
-          pattana_panchayathi: pattana,
-          ward,
-          post_office: postOffice,
-          client_pincode: pincode,
-          full_address_review: generatedAddress,
-          client_latitude: latitude,
-          client_longitude: longitude,
-          phone_no: auth.phone,
-          otp_verified: 1,
-          terms_accepted: 1,
-          client_status: "Active",
+          client_name: form.fullName, email: form.email, client_type: "Personal",
+          registration_type: auth.registrationType, client_state: "Karnataka",
+          division: form.division, client_district: form.district, client_taluk: form.taluk,
+          urban_rural: form.urbanRural, cmc_tmc_type: form.cmcType,
+          pattana_panchayathi: form.pattana, ward: form.ward, post_office: form.postOffice,
+          client_pincode: form.pincode, full_address_review: generatedAddress,
+          client_latitude: form.latitude, client_longitude: form.longitude,
+          phone_no: auth.phone, otp_verified: 1, terms_accepted: 1, client_status: "Active",
         };
 
         const res = await createRecord("DigiVault Client", body);
         const clientId = res?.data?.name || "CL-00001";
-        setAuth((prev) => ({
-          ...prev,
-          client_id: clientId,
-          name: fullName,
-          supabaseUserId: prev.supabaseUserId || "",
-        }));
+        setAuth((prev) => ({ ...prev, client_id: clientId, name: form.fullName, supabaseUserId: prev.supabaseUserId || "" }));
+        clearDraft();
         toast({ title: "Registration successful!" });
         navigate("/dashboard", { replace: true });
       }
@@ -435,148 +425,95 @@ const RegisterForm = () => {
       </div>
 
       {/* scrollable form */}
-      <div className="flex-1 overflow-y-auto px-5 py-6 pb-28 space-y-6">
+      <div ref={formRef} className="flex-1 overflow-y-auto px-5 py-6 pb-28 space-y-6">
+        <DraftIndicator lastSaved={lastSaved} onStartFresh={handleStartFresh} showStartFresh={hadDraft.current} />
+
         {isOrgType ? (
           <>
             {/* ── Organisation Details ── */}
             <section className="space-y-4">
               <h2 className="text-base font-bold text-foreground">Organisation Details</h2>
 
-              <div className="space-y-1">
-                <label className="text-sm font-bold text-foreground">
-                  Company Name <span className="text-destructive">*</span>
-                </label>
+              <div className="space-y-1" data-field="companyName">
+                <RequiredLabel>Company Name</RequiredLabel>
                 <Input
                   placeholder="Enter company name"
-                  value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                  className="h-12"
+                  value={form.companyName}
+                  onChange={(e) => setField("companyName", e.target.value)}
+                  className={`h-12 ${errors.companyName ? "border-destructive ring-1 ring-destructive" : ""}`}
                 />
+                {errors.companyName && <p className="text-xs text-destructive mt-1">{errors.companyName}</p>}
               </div>
 
-              <Dropdown
-                label="Company Type"
-                value={companyType}
-                onChange={setCompanyType}
-                options={companyTypes}
-                placeholder="Select Company Type"
-              />
+              <Dropdown label="Company Type" value={form.companyType} onChange={(v) => setField("companyType", v)} options={companyTypes} placeholder="Select Company Type" />
 
-              <div className="space-y-1">
-                <label className="text-sm font-bold text-foreground">GSTIN / PAN</label>
+              <div className="space-y-1" data-field="gstinPan">
+                <OptionalLabel>GSTIN / PAN</OptionalLabel>
                 <Input
                   placeholder="e.g. 22AAAAA0000A1Z5"
-                  value={gstinPan}
-                  onChange={(e) => setGstinPan(e.target.value.toUpperCase().slice(0, 15))}
-                  className="h-12"
+                  value={form.gstinPan}
+                  onChange={(e) => setField("gstinPan", e.target.value.toUpperCase().slice(0, 15))}
+                  className={`h-12 ${errors.gstinPan ? "border-destructive ring-1 ring-destructive" : ""}`}
                 />
+                {errors.gstinPan && <p className="text-xs text-destructive mt-1">{errors.gstinPan}</p>}
               </div>
 
               <div className="space-y-1">
-                <label className="text-sm font-bold text-foreground">Business Registration Number</label>
-                <Input
-                  placeholder="Enter registration number"
-                  value={businessRegNo}
-                  onChange={(e) => setBusinessRegNo(e.target.value)}
-                  className="h-12"
-                />
+                <OptionalLabel>Business Registration Number</OptionalLabel>
+                <Input placeholder="Enter registration number" value={form.businessRegNo} onChange={(e) => setField("businessRegNo", e.target.value)} className="h-12" />
               </div>
 
               <div className="space-y-1">
-                <label className="text-sm font-bold text-foreground">Nature of Business</label>
-                <Input
-                  placeholder="e.g. Real Estate, Agriculture"
-                  value={natureOfBusiness}
-                  onChange={(e) => setNatureOfBusiness(e.target.value)}
-                  className="h-12"
-                />
+                <OptionalLabel>Nature of Business</OptionalLabel>
+                <Input placeholder="e.g. Real Estate, Agriculture" value={form.natureOfBusiness} onChange={(e) => setField("natureOfBusiness", e.target.value)} className="h-12" />
               </div>
 
               <div className="space-y-1">
-                <label className="text-sm font-bold text-foreground">Company Website</label>
-                <Input
-                  placeholder="https://example.com"
-                  value={companyWebsite}
-                  onChange={(e) => setCompanyWebsite(e.target.value)}
-                  className="h-12"
-                />
+                <OptionalLabel>Company Website</OptionalLabel>
+                <Input placeholder="https://example.com" value={form.companyWebsite} onChange={(e) => setField("companyWebsite", e.target.value)} className="h-12" />
               </div>
 
               <div className="space-y-1">
-                <label className="text-sm font-bold text-foreground">Number of Employees</label>
-                <Input
-                  type="number"
-                  placeholder="e.g. 50"
-                  value={numEmployees}
-                  onChange={(e) => setNumEmployees(e.target.value)}
-                  className="h-12"
-                />
+                <OptionalLabel>Number of Employees</OptionalLabel>
+                <Input type="number" placeholder="e.g. 50" value={form.numEmployees} onChange={(e) => setField("numEmployees", e.target.value)} className="h-12" />
               </div>
 
-              <Dropdown
-                label="Annual Revenue Range"
-                value={annualRevenue}
-                onChange={setAnnualRevenue}
-                options={revenueRanges}
-                placeholder="Select Range"
-              />
+              <Dropdown label="Annual Revenue Range" value={form.annualRevenue} onChange={(v) => setField("annualRevenue", v)} options={revenueRanges} placeholder="Select Range" />
 
               <div className="space-y-1">
-                <label className="text-sm font-bold text-foreground">Date of Establishment</label>
-                <Input
-                  type="date"
-                  value={dateOfEstablishment}
-                  onChange={(e) => setDateOfEstablishment(e.target.value)}
-                  className="h-12"
-                />
+                <OptionalLabel>Date of Establishment</OptionalLabel>
+                <Input type="date" value={form.dateOfEstablishment} onChange={(e) => setField("dateOfEstablishment", e.target.value)} className="h-12" />
               </div>
 
               <div className="space-y-1">
-                <label className="text-sm font-bold text-foreground">Owner Name</label>
-                <Input
-                  placeholder="Enter owner name"
-                  value={ownerName}
-                  onChange={(e) => setOwnerName(e.target.value)}
-                  className="h-12"
-                />
+                <OptionalLabel>Owner Name</OptionalLabel>
+                <Input placeholder="Enter owner name" value={form.ownerName} onChange={(e) => setField("ownerName", e.target.value)} className="h-12" />
               </div>
 
               <div className="space-y-1">
-                <label className="text-sm font-bold text-foreground">Ownership Status</label>
-                <Input
-                  placeholder="e.g. Sole Proprietor, Partner"
-                  value={ownershipStatus}
-                  onChange={(e) => setOwnershipStatus(e.target.value)}
-                  className="h-12"
-                />
+                <OptionalLabel>Ownership Status</OptionalLabel>
+                <Input placeholder="e.g. Sole Proprietor, Partner" value={form.ownershipStatus} onChange={(e) => setField("ownershipStatus", e.target.value)} className="h-12" />
               </div>
 
               <div className="space-y-1">
-                <label className="text-sm font-bold text-foreground">Incorporation Number</label>
-                <Input
-                  placeholder="Optional"
-                  value={incorporationNumber}
-                  onChange={(e) => setIncorporationNumber(e.target.value)}
-                  className="h-12"
-                />
+                <OptionalLabel>Incorporation Number</OptionalLabel>
+                <Input placeholder="Optional" value={form.incorporationNumber} onChange={(e) => setField("incorporationNumber", e.target.value)} className="h-12" />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-sm font-bold text-foreground">Email</label>
+              <div className="space-y-1" data-field="email">
+                <OptionalLabel>Email</OptionalLabel>
                 <Input
                   type="email"
                   placeholder="Enter company email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="h-12"
+                  value={form.email}
+                  onChange={(e) => setField("email", e.target.value)}
+                  className={`h-12 ${errors.email ? "border-destructive ring-1 ring-destructive" : ""}`}
                 />
+                {errors.email && <p className="text-xs text-destructive mt-1">{errors.email}</p>}
               </div>
             </section>
 
-            {/* Divider */}
             <div className="border-t border-border" />
-
-            {/* ── Office Address ── */}
             <AddressSection heading="Office Address" />
           </>
         ) : (
@@ -585,31 +522,31 @@ const RegisterForm = () => {
             <section className="space-y-4">
               <h2 className="text-base font-bold text-foreground">Personal Details</h2>
 
-              <div className="space-y-1">
-                <label className="text-sm font-bold text-foreground">
-                  Full Name <span className="text-destructive">*</span>
-                </label>
+              <div className="space-y-1" data-field="fullName">
+                <RequiredLabel>Full Name</RequiredLabel>
                 <Input
                   placeholder="Enter your full name"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="h-12"
+                  value={form.fullName}
+                  onChange={(e) => setField("fullName", e.target.value)}
+                  className={`h-12 ${errors.fullName ? "border-destructive ring-1 ring-destructive" : ""}`}
                 />
+                {errors.fullName && <p className="text-xs text-destructive mt-1">{errors.fullName}</p>}
               </div>
 
-              <div className="space-y-1">
-                <label className="text-sm font-bold text-foreground">Email</label>
+              <div className="space-y-1" data-field="email">
+                <OptionalLabel>Email</OptionalLabel>
                 <Input
                   type="email"
                   placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="h-12"
+                  value={form.email}
+                  onChange={(e) => setField("email", e.target.value)}
+                  className={`h-12 ${errors.email ? "border-destructive ring-1 ring-destructive" : ""}`}
                 />
+                {errors.email && <p className="text-xs text-destructive mt-1">{errors.email}</p>}
               </div>
 
               <div className="space-y-1">
-                <label className="text-sm font-bold text-foreground">Profile Photo</label>
+                <OptionalLabel>Profile Photo</OptionalLabel>
                 <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
                 <button
                   onClick={() => fileRef.current?.click()}
@@ -624,7 +561,6 @@ const RegisterForm = () => {
               </div>
             </section>
 
-            {/* ── Address ── */}
             <AddressSection />
           </>
         )}
@@ -632,7 +568,11 @@ const RegisterForm = () => {
 
       {/* fixed bottom button */}
       <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border px-5 py-4">
-        <Button className="w-full h-12" onClick={handleSubmit} disabled={saving}>
+        <Button
+          className={`w-full h-12 ${shakeBtn ? "animate-[shake_0.3s]" : ""}`}
+          onClick={handleSubmit}
+          disabled={saving}
+        >
           {saving ? "Saving..." : "Save & Next"}
         </Button>
       </div>
@@ -640,12 +580,11 @@ const RegisterForm = () => {
         isOpen={showMap}
         onClose={() => setShowMap(false)}
         onSelect={(lat, lng) => {
-          setLatitude(String(lat.toFixed(6)));
-          setLongitude(String(lng.toFixed(6)));
+          setMultiple({ latitude: String(lat.toFixed(6)), longitude: String(lng.toFixed(6)) });
           setShowMap(false);
         }}
-        initialLat={latitude ? Number(latitude) : undefined}
-        initialLng={longitude ? Number(longitude) : undefined}
+        initialLat={form.latitude ? Number(form.latitude) : undefined}
+        initialLng={form.longitude ? Number(form.longitude) : undefined}
       />
     </div>
   );
