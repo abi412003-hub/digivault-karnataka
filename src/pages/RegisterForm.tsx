@@ -57,6 +57,9 @@ const Dropdown = ({
   </div>
 );
 
+const companyTypes = ["Pvt.Ltd", "LLP", "Partnership", "Proprietary", "Other"];
+const revenueRanges = ["Below 50L", "50L-1Cr", "1Cr-1.5Cr", "1.5Cr-5Cr", "5Cr-10Cr", "Above 10Cr"];
+
 /* ── main form ──────────────────────────────────────────────── */
 const RegisterForm = () => {
   const navigate = useNavigate();
@@ -64,10 +67,28 @@ const RegisterForm = () => {
   const { toast } = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const isOrgType =
+    auth.registrationType === "Organization" ||
+    auth.registrationType === "Land Aggregator - Organisation";
+
   // personal
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+
+  // org fields
+  const [companyName, setCompanyName] = useState("");
+  const [companyType, setCompanyType] = useState("");
+  const [gstinPan, setGstinPan] = useState("");
+  const [businessRegNo, setBusinessRegNo] = useState("");
+  const [natureOfBusiness, setNatureOfBusiness] = useState("");
+  const [companyWebsite, setCompanyWebsite] = useState("");
+  const [numEmployees, setNumEmployees] = useState("");
+  const [annualRevenue, setAnnualRevenue] = useState("");
+  const [dateOfEstablishment, setDateOfEstablishment] = useState("");
+  const [ownerName, setOwnerName] = useState("");
+  const [ownershipStatus, setOwnershipStatus] = useState("");
+  const [incorporationNumber, setIncorporationNumber] = useState("");
 
   // address
   const [division, setDivision] = useState("");
@@ -151,18 +172,123 @@ const RegisterForm = () => {
     return parts.join(", ");
   }, [urbanRural, cmcType, pattana, ward, gramPanchayathi, village, taluk, district, division, pincode]);
 
+  /* ── Address section (shared) ── */
+  const AddressSection = ({ heading = "Address" }: { heading?: string }) => (
+    <section className="space-y-4">
+      <h2 className="text-base font-bold text-foreground">{heading}</h2>
+
+      <Dropdown label="State" value="Karnataka" onChange={() => {}} options={["Karnataka"]} disabled />
+      <Dropdown label="Division" value={division} onChange={handleDivision} options={divisions} />
+      <Dropdown label="District" value={district} onChange={handleDistrict} options={districtOptions} placeholder={division ? "Select District" : "Select Division first"} />
+      <Dropdown label="Taluk" value={taluk} onChange={handleTaluk} options={talukOptions} placeholder={district ? "Select Taluk" : "Select District first"} />
+
+      <div className="space-y-2">
+        <label className="text-sm font-bold text-foreground underline">Select Urban / Rural</label>
+        <div className="flex gap-6">
+          {(["Urban", "Rural"] as const).map((opt) => (
+            <button
+              key={opt}
+              onClick={() => {
+                setUrbanRural(opt);
+                resetAreaFields();
+              }}
+              className="flex items-center gap-2 min-h-[44px]"
+            >
+              <span
+                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                  urbanRural === opt ? "border-primary" : "border-input"
+                }`}
+              >
+                {urbanRural === opt && <span className="w-2.5 h-2.5 rounded-full bg-primary" />}
+              </span>
+              <span className="text-sm text-foreground">{opt}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {urbanRural === "Urban" && (
+        <div className="space-y-4">
+          <Dropdown label="Select CMC/TMC/TP/GBA/MC" value={cmcType} onChange={setCmcType} options={cmcTmcOptions} />
+          <Dropdown label="Select Pattana Panchayathi" value={pattana} onChange={setPattana} options={pattanaOptions} placeholder={taluk ? "Select Pattana Panchayathi" : "Select Taluk first"} />
+          <Dropdown label="Urban" value={ward} onChange={setWard} options={urbanWards} placeholder="Select Ward" />
+        </div>
+      )}
+
+      {urbanRural === "Rural" && (
+        <div className="space-y-4">
+          <Dropdown label="Select Gram Panchayathi" value={gramPanchayathi} onChange={setGramPanchayathi} options={gpOptions} placeholder={taluk ? "Select Gram Panchayathi" : "Select Taluk first"} />
+          <Dropdown label="Village" value={village} onChange={setVillage} options={villageOptions} placeholder={gramPanchayathi ? "Select Village" : "Select GP first"} />
+        </div>
+      )}
+
+      <div className="space-y-1">
+        <label className="text-sm font-bold text-foreground">Post Office</label>
+        <Input placeholder="Ilanthila" value={postOffice} onChange={(e) => setPostOffice(e.target.value)} className="h-12" />
+      </div>
+
+      <div className="space-y-1">
+        <label className="text-sm font-bold text-foreground">Pincode</label>
+        <Input
+          type="number"
+          placeholder="560016"
+          value={pincode}
+          onChange={(e) => setPincode(e.target.value.slice(0, 6))}
+          maxLength={6}
+          className="h-12"
+        />
+      </div>
+
+      <div className="space-y-1">
+        <label className="text-sm font-bold text-foreground">Address Review</label>
+        <textarea
+          readOnly
+          value={generatedAddress}
+          className="w-full min-h-[80px] rounded-lg border border-input bg-muted px-4 py-3 text-sm text-muted-foreground resize-none"
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1">
+          <label className="text-sm font-bold text-foreground">Latitude</label>
+          <Input placeholder="12.9716" value={latitude} onChange={(e) => setLatitude(e.target.value)} className="h-12" />
+        </div>
+        <div className="space-y-1">
+          <label className="text-sm font-bold text-foreground">Longitude</label>
+          <Input placeholder="77.5946" value={longitude} onChange={(e) => setLongitude(e.target.value)} className="h-12" />
+        </div>
+      </div>
+
+      <button className="flex items-center gap-2 text-sm text-primary min-h-[44px]">
+        <MapPin size={18} className="text-destructive" />
+        Select the location
+      </button>
+    </section>
+  );
+
   /* submit */
   const handleSubmit = async () => {
-    if (!fullName.trim()) {
-      toast({ title: "Full Name is required", variant: "destructive" });
-      return;
+    if (isOrgType) {
+      if (!companyName.trim()) {
+        toast({ title: "Company Name is required", variant: "destructive" });
+        return;
+      }
+      if (gstinPan && !/^[A-Z0-9]{15}$/i.test(gstinPan.replace(/\s/g, ""))) {
+        toast({ title: "GSTIN must be 15 alphanumeric characters", variant: "destructive" });
+        return;
+      }
+    } else {
+      if (!fullName.trim()) {
+        toast({ title: "Full Name is required", variant: "destructive" });
+        return;
+      }
     }
+
     setSaving(true);
     try {
       // Check if client already exists with this phone (prevent duplicates)
       const existing = await lookupClient(auth.phone);
       if (existing) {
-        // Client already exists — just log them in
         setAuth({
           client_id: existing.name,
           name: existing.client_name,
@@ -175,42 +301,115 @@ const RegisterForm = () => {
         return;
       }
 
-      const clientType =
-        auth.registrationType === "Individual"
-          ? "Personal"
-          : auth.registrationType === "Organization"
-          ? "Organisation"
-          : auth.registrationType;
+      if (isOrgType) {
+        // Step 1: Create DigiVault Organisation
+        const orgBody: Record<string, unknown> = {
+          company_name: companyName,
+          company_type: companyType,
+          gstin_pan: gstinPan,
+          business_registration_number: businessRegNo,
+          nature_of_business: natureOfBusiness,
+          company_website: companyWebsite,
+          number_of_employees: numEmployees ? Number(numEmployees) : undefined,
+          annual_revenue_range: annualRevenue,
+          date_of_establishment: dateOfEstablishment || undefined,
+          owner_name: ownerName,
+          ownership_status: ownershipStatus,
+          incorporation_number: incorporationNumber,
+          office_address: generatedAddress,
+          org_state: "Karnataka",
+          org_district: district,
+          org_taluk: taluk,
+          org_pincode: pincode,
+        };
+        // Remove undefined keys
+        Object.keys(orgBody).forEach((k) => orgBody[k] === undefined && delete orgBody[k]);
 
-      const body = {
-        client_name: fullName,
-        email,
-        client_type: clientType,
-        registration_type: auth.registrationType,
-        client_state: "Karnataka",
-        division,
-        client_district: district,
-        client_taluk: taluk,
-        urban_rural: urbanRural,
-        cmc_tmc_type: cmcType,
-        pattana_panchayathi: pattana,
-        ward,
-        post_office: postOffice,
-        client_pincode: pincode,
-        full_address_review: generatedAddress,
-        client_latitude: latitude,
-        client_longitude: longitude,
-        phone_no: auth.phone,
-        otp_verified: 1,
-        terms_accepted: 1,
-        client_status: "Active",
-      };
+        let orgName: string;
+        try {
+          const orgRes = await createRecord("DigiVault Organisation", orgBody);
+          orgName = orgRes?.data?.name;
+          if (!orgName) throw new Error("Organisation creation returned no name");
+        } catch (err) {
+          toast({ title: "Failed to create organisation. Please try again.", variant: "destructive" });
+          setSaving(false);
+          return;
+        }
 
-      const res = await createRecord("DigiVault Client", body);
-      const clientId = res?.data?.name || "CL-00001";
-      setAuth((prev) => ({ ...prev, client_id: clientId, name: fullName, supabaseUserId: prev.supabaseUserId || "" }));
-      toast({ title: "Registration successful!" });
-      navigate("/dashboard", { replace: true });
+        // Step 2: Create DigiVault Client linked to org
+        const clientBody = {
+          client_name: companyName,
+          email,
+          client_type: "Organisation",
+          registration_type: auth.registrationType,
+          organisation_link: orgName,
+          client_state: "Karnataka",
+          division,
+          client_district: district,
+          client_taluk: taluk,
+          urban_rural: urbanRural,
+          cmc_tmc_type: cmcType,
+          pattana_panchayathi: pattana,
+          ward,
+          post_office: postOffice,
+          client_pincode: pincode,
+          full_address_review: generatedAddress,
+          client_latitude: latitude,
+          client_longitude: longitude,
+          phone_no: auth.phone,
+          otp_verified: 1,
+          terms_accepted: 1,
+          client_status: "Active",
+        };
+
+        const res = await createRecord("DigiVault Client", clientBody);
+        const clientId = res?.data?.name || "CL-00001";
+        setAuth((prev) => ({
+          ...prev,
+          client_id: clientId,
+          name: companyName,
+          supabaseUserId: prev.supabaseUserId || "",
+        }));
+        toast({ title: "Registration successful!" });
+        navigate("/dashboard", { replace: true });
+      } else {
+        // Individual flow (unchanged)
+        const clientType = "Personal";
+        const body = {
+          client_name: fullName,
+          email,
+          client_type: clientType,
+          registration_type: auth.registrationType,
+          client_state: "Karnataka",
+          division,
+          client_district: district,
+          client_taluk: taluk,
+          urban_rural: urbanRural,
+          cmc_tmc_type: cmcType,
+          pattana_panchayathi: pattana,
+          ward,
+          post_office: postOffice,
+          client_pincode: pincode,
+          full_address_review: generatedAddress,
+          client_latitude: latitude,
+          client_longitude: longitude,
+          phone_no: auth.phone,
+          otp_verified: 1,
+          terms_accepted: 1,
+          client_status: "Active",
+        };
+
+        const res = await createRecord("DigiVault Client", body);
+        const clientId = res?.data?.name || "CL-00001";
+        setAuth((prev) => ({
+          ...prev,
+          client_id: clientId,
+          name: fullName,
+          supabaseUserId: prev.supabaseUserId || "",
+        }));
+        toast({ title: "Registration successful!" });
+        navigate("/dashboard", { replace: true });
+      }
     } catch {
       toast({ title: "Registration failed. Please try again.", variant: "destructive" });
     } finally {
@@ -230,144 +429,198 @@ const RegisterForm = () => {
 
       {/* scrollable form */}
       <div className="flex-1 overflow-y-auto px-5 py-6 pb-28 space-y-6">
-        {/* ── Personal Details ── */}
-        <section className="space-y-4">
-          <h2 className="text-base font-bold text-foreground">Personal Details</h2>
+        {isOrgType ? (
+          <>
+            {/* ── Organisation Details ── */}
+            <section className="space-y-4">
+              <h2 className="text-base font-bold text-foreground">Organisation Details</h2>
 
-          <div className="space-y-1">
-            <label className="text-sm font-bold text-foreground">
-              Full Name <span className="text-destructive">*</span>
-            </label>
-            <Input
-              placeholder="Enter your full name"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              className="h-12"
-            />
-          </div>
+              <div className="space-y-1">
+                <label className="text-sm font-bold text-foreground">
+                  Company Name <span className="text-destructive">*</span>
+                </label>
+                <Input
+                  placeholder="Enter company name"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  className="h-12"
+                />
+              </div>
 
-          <div className="space-y-1">
-            <label className="text-sm font-bold text-foreground">Email</label>
-            <Input
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="h-12"
-            />
-          </div>
+              <Dropdown
+                label="Company Type"
+                value={companyType}
+                onChange={setCompanyType}
+                options={companyTypes}
+                placeholder="Select Company Type"
+              />
 
-          <div className="space-y-1">
-            <label className="text-sm font-bold text-foreground">Profile Photo</label>
-            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
-            <button
-              onClick={() => fileRef.current?.click()}
-              className="w-20 h-20 rounded-full border-2 border-input bg-muted flex items-center justify-center overflow-hidden"
-            >
-              {photoPreview ? (
-                <img src={photoPreview} alt="Profile" className="w-full h-full object-cover" />
-              ) : (
-                <Camera size={28} className="text-muted-foreground" />
-              )}
-            </button>
-          </div>
-        </section>
+              <div className="space-y-1">
+                <label className="text-sm font-bold text-foreground">GSTIN / PAN</label>
+                <Input
+                  placeholder="e.g. 22AAAAA0000A1Z5"
+                  value={gstinPan}
+                  onChange={(e) => setGstinPan(e.target.value.toUpperCase().slice(0, 15))}
+                  className="h-12"
+                />
+              </div>
 
-        {/* ── Address ── */}
-        <section className="space-y-4">
-          <h2 className="text-base font-bold text-foreground">Address</h2>
+              <div className="space-y-1">
+                <label className="text-sm font-bold text-foreground">Business Registration Number</label>
+                <Input
+                  placeholder="Enter registration number"
+                  value={businessRegNo}
+                  onChange={(e) => setBusinessRegNo(e.target.value)}
+                  className="h-12"
+                />
+              </div>
 
-          <Dropdown label="State" value="Karnataka" onChange={() => {}} options={["Karnataka"]} disabled />
-          <Dropdown label="Division" value={division} onChange={handleDivision} options={divisions} />
-          <Dropdown label="District" value={district} onChange={handleDistrict} options={districtOptions} placeholder={division ? "Select District" : "Select Division first"} />
-          <Dropdown label="Taluk" value={taluk} onChange={handleTaluk} options={talukOptions} placeholder={district ? "Select Taluk" : "Select District first"} />
+              <div className="space-y-1">
+                <label className="text-sm font-bold text-foreground">Nature of Business</label>
+                <Input
+                  placeholder="e.g. Real Estate, Agriculture"
+                  value={natureOfBusiness}
+                  onChange={(e) => setNatureOfBusiness(e.target.value)}
+                  className="h-12"
+                />
+              </div>
 
-          {/* Urban / Rural */}
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-foreground underline">Select Urban / Rural</label>
-            <div className="flex gap-6">
-              {(["Urban", "Rural"] as const).map((opt) => (
+              <div className="space-y-1">
+                <label className="text-sm font-bold text-foreground">Company Website</label>
+                <Input
+                  placeholder="https://example.com"
+                  value={companyWebsite}
+                  onChange={(e) => setCompanyWebsite(e.target.value)}
+                  className="h-12"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-sm font-bold text-foreground">Number of Employees</label>
+                <Input
+                  type="number"
+                  placeholder="e.g. 50"
+                  value={numEmployees}
+                  onChange={(e) => setNumEmployees(e.target.value)}
+                  className="h-12"
+                />
+              </div>
+
+              <Dropdown
+                label="Annual Revenue Range"
+                value={annualRevenue}
+                onChange={setAnnualRevenue}
+                options={revenueRanges}
+                placeholder="Select Range"
+              />
+
+              <div className="space-y-1">
+                <label className="text-sm font-bold text-foreground">Date of Establishment</label>
+                <Input
+                  type="date"
+                  value={dateOfEstablishment}
+                  onChange={(e) => setDateOfEstablishment(e.target.value)}
+                  className="h-12"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-sm font-bold text-foreground">Owner Name</label>
+                <Input
+                  placeholder="Enter owner name"
+                  value={ownerName}
+                  onChange={(e) => setOwnerName(e.target.value)}
+                  className="h-12"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-sm font-bold text-foreground">Ownership Status</label>
+                <Input
+                  placeholder="e.g. Sole Proprietor, Partner"
+                  value={ownershipStatus}
+                  onChange={(e) => setOwnershipStatus(e.target.value)}
+                  className="h-12"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-sm font-bold text-foreground">Incorporation Number</label>
+                <Input
+                  placeholder="Optional"
+                  value={incorporationNumber}
+                  onChange={(e) => setIncorporationNumber(e.target.value)}
+                  className="h-12"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-sm font-bold text-foreground">Email</label>
+                <Input
+                  type="email"
+                  placeholder="Enter company email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="h-12"
+                />
+              </div>
+            </section>
+
+            {/* Divider */}
+            <div className="border-t border-border" />
+
+            {/* ── Office Address ── */}
+            <AddressSection heading="Office Address" />
+          </>
+        ) : (
+          <>
+            {/* ── Personal Details (Individual) ── */}
+            <section className="space-y-4">
+              <h2 className="text-base font-bold text-foreground">Personal Details</h2>
+
+              <div className="space-y-1">
+                <label className="text-sm font-bold text-foreground">
+                  Full Name <span className="text-destructive">*</span>
+                </label>
+                <Input
+                  placeholder="Enter your full name"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="h-12"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-sm font-bold text-foreground">Email</label>
+                <Input
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="h-12"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-sm font-bold text-foreground">Profile Photo</label>
+                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
                 <button
-                  key={opt}
-                  onClick={() => {
-                    setUrbanRural(opt);
-                    resetAreaFields();
-                  }}
-                  className="flex items-center gap-2 min-h-[44px]"
+                  onClick={() => fileRef.current?.click()}
+                  className="w-20 h-20 rounded-full border-2 border-input bg-muted flex items-center justify-center overflow-hidden"
                 >
-                  <span
-                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                      urbanRural === opt ? "border-primary" : "border-input"
-                    }`}
-                  >
-                    {urbanRural === opt && <span className="w-2.5 h-2.5 rounded-full bg-primary" />}
-                  </span>
-                  <span className="text-sm text-foreground">{opt}</span>
+                  {photoPreview ? (
+                    <img src={photoPreview} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    <Camera size={28} className="text-muted-foreground" />
+                  )}
                 </button>
-              ))}
-            </div>
-          </div>
+              </div>
+            </section>
 
-          {/* Urban fields */}
-          {urbanRural === "Urban" && (
-            <div className="space-y-4">
-              <Dropdown label="Select CMC/TMC/TP/GBA/MC" value={cmcType} onChange={setCmcType} options={cmcTmcOptions} />
-              <Dropdown label="Select Pattana Panchayathi" value={pattana} onChange={setPattana} options={pattanaOptions} placeholder={taluk ? "Select Pattana Panchayathi" : "Select Taluk first"} />
-              <Dropdown label="Urban" value={ward} onChange={setWard} options={urbanWards} placeholder="Select Ward" />
-            </div>
-          )}
-
-          {/* Rural fields */}
-          {urbanRural === "Rural" && (
-            <div className="space-y-4">
-              <Dropdown label="Select Gram Panchayathi" value={gramPanchayathi} onChange={setGramPanchayathi} options={gpOptions} placeholder={taluk ? "Select Gram Panchayathi" : "Select Taluk first"} />
-              <Dropdown label="Village" value={village} onChange={setVillage} options={villageOptions} placeholder={gramPanchayathi ? "Select Village" : "Select GP first"} />
-            </div>
-          )}
-
-          <div className="space-y-1">
-            <label className="text-sm font-bold text-foreground">Post Office</label>
-            <Input placeholder="Ilanthila" value={postOffice} onChange={(e) => setPostOffice(e.target.value)} className="h-12" />
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-sm font-bold text-foreground">Pincode</label>
-            <Input
-              type="number"
-              placeholder="560016"
-              value={pincode}
-              onChange={(e) => setPincode(e.target.value.slice(0, 6))}
-              maxLength={6}
-              className="h-12"
-            />
-          </div>
-
-          {/* Address review */}
-          <div className="space-y-1">
-            <label className="text-sm font-bold text-foreground">Address Review</label>
-            <textarea
-              readOnly
-              value={generatedAddress}
-              className="w-full min-h-[80px] rounded-lg border border-input bg-muted px-4 py-3 text-sm text-muted-foreground resize-none"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label className="text-sm font-bold text-foreground">Latitude</label>
-              <Input placeholder="12.9716" value={latitude} onChange={(e) => setLatitude(e.target.value)} className="h-12" />
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm font-bold text-foreground">Longitude</label>
-              <Input placeholder="77.5946" value={longitude} onChange={(e) => setLongitude(e.target.value)} className="h-12" />
-            </div>
-          </div>
-
-          <button className="flex items-center gap-2 text-sm text-primary min-h-[44px]">
-            <MapPin size={18} className="text-destructive" />
-            Select the location
-          </button>
-        </section>
+            {/* ── Address ── */}
+            <AddressSection />
+          </>
+        )}
       </div>
 
       {/* fixed bottom button */}
