@@ -8,6 +8,7 @@ import Splash from "./pages/Splash";
 import Onboarding from "./pages/Onboarding";
 import Login from "./pages/Login";
 import RegisterType from "./pages/RegisterType";
+import LandAggregatorType from "./pages/LandAggregatorType";
 import RegisterForm from "./pages/RegisterForm";
 import Dashboard from "./pages/Dashboard";
 import Properties from "./pages/Properties";

@@ -19,6 +19,11 @@ const RegisterType = () => {
   const [agreed, setAgreed] = useState(false);
 
   const handleSelect = (key: string) => {
+    if (key === "Land Aggregator") {
+      setRegistrationType("Land Aggregator");
+      navigate("/register-aggregator-type");
+      return;
+    }
     setSelected(key);
     setAgreed(false);
     setShowSheet(true);
