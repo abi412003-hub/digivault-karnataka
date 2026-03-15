@@ -105,13 +105,13 @@ const LandAggregatorType = () => {
                 className="text-sm text-muted-foreground leading-relaxed"
               >
                 I agree to the{" "}
-                <span className="text-primary underline cursor-pointer">
-                  Terms & Conditions
-                </span>{" "}
-                and{" "}
-                <span className="text-primary underline cursor-pointer">
-                  Privacy Policy
-                </span>
+                 <a href="/docs/terms-and-conditions.pdf" target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                   Terms & Conditions
+                 </a>{" "}
+                 and{" "}
+                 <a href="/docs/privacy-policy.pdf" target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                   Privacy Policy
+                 </a>
                 .
               </label>
             </div>
