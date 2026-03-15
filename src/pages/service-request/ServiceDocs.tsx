@@ -138,56 +138,54 @@ const ServiceDocs = () => {
   return (
     <div className="flex flex-col min-h-screen bg-background">
       {/* Header */}
-      <div className="flex items-center px-4 h-14 border-b border-border">
+      <div className="flex items-center px-4 h-14">
         <button onClick={() => navigate(-1)} className="min-h-[44px] min-w-[44px] flex items-center justify-center -ml-2">
           <ArrowLeft size={22} className="text-foreground" />
         </button>
       </div>
 
-      {/* Review Documents title */}
-      <div className="px-4 pt-4 flex justify-center">
-        <span className="px-6 py-2 rounded-full bg-[hsl(217_91%_93%)] text-[hsl(217_91%_53%)] text-sm font-bold">
+      {/* Review Documents badge */}
+      <div className="flex justify-center pb-3">
+        <span className="px-8 py-2 rounded-full border-2 border-primary text-primary text-sm font-bold">
           Review Documents
         </span>
       </div>
 
       {/* Service Info */}
-      <div className="px-5 pt-4 space-y-2">
-        <div className="flex justify-between items-center">
+      <div className="px-5 pt-2 space-y-1.5">
+        <div className="flex justify-between items-start">
           <span className="text-sm font-bold text-foreground">Main Service</span>
-          <span className="text-sm text-muted-foreground">{mainService || "—"}</span>
+          <span className="text-sm text-muted-foreground text-right max-w-[55%]">{mainService || "—"}</span>
         </div>
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-start">
           <span className="text-sm font-bold text-foreground">Sub Service</span>
-          <span className="text-sm text-muted-foreground">{subService || "—"}</span>
+          <span className="text-sm text-muted-foreground text-right max-w-[55%]">{subService || "—"}</span>
         </div>
       </div>
 
-      {/* Section title */}
-      <div className="px-5 pt-4 pb-2 border-b border-border">
-        <h2 className="text-sm font-bold text-foreground text-center">
+      {/* Section divider + title */}
+      <div className="px-5 pt-4 pb-3 border-b border-border">
+        <h2 className="text-sm font-bold text-foreground text-center leading-snug">
           {subService || mainService || "Service"} Required Documents
         </h2>
       </div>
 
       {/* Document list */}
-      <div className="flex-1 overflow-y-auto px-5 py-4 pb-32 space-y-5">
+      <div className="flex-1 overflow-y-auto px-5 py-4 pb-36 space-y-4">
         {loading ? (
           Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="h-16 rounded-lg bg-muted animate-pulse" />
           ))
         ) : (
           docs.map((doc, idx) => (
-            <div key={`${doc.label}-${idx}`} className="space-y-1.5">
-              {/* Document label */}
-              <label className="text-sm font-bold text-foreground">{doc.label}</label>
+            <div key={`${doc.label}-${idx}`} className="space-y-1">
+              <label className="text-sm font-medium text-foreground">{doc.label}</label>
 
-              {/* Upload row — matches screenshot design */}
               <div className="flex items-center gap-2">
-                {/* File input display */}
+                {/* Upload field */}
                 <div
                   onClick={() => !doc.file && !doc.isNA && fileRefs.current[idx]?.click()}
-                  className={`flex-1 h-11 rounded-lg border px-3 flex items-center gap-2 text-sm cursor-pointer ${
+                  className={`flex-1 h-10 rounded-lg border px-3 flex items-center text-sm cursor-pointer ${
                     doc.file
                       ? "border-green-400 bg-green-50/50"
                       : doc.isNA
@@ -195,12 +193,11 @@ const ServiceDocs = () => {
                       : "border-input bg-background"
                   }`}
                 >
-                  <span className={`truncate flex-1 ${doc.file ? "text-green-700" : doc.isNA ? "text-amber-600 italic" : "text-muted-foreground"}`}>
+                  <span className={`truncate ${doc.file ? "text-green-700" : doc.isNA ? "text-amber-600 italic" : "text-muted-foreground"}`}>
                     {doc.file ? doc.file.name : doc.isNA ? "Not Available" : "Upload File"}
                   </span>
                 </div>
 
-                {/* Hidden file input */}
                 <input
                   ref={(el) => { fileRefs.current[idx] = el; }}
                   type="file"
@@ -209,62 +206,50 @@ const ServiceDocs = () => {
                   onChange={(e) => handleFile(idx, e.target.files?.[0] || null)}
                 />
 
-                {/* Status icon: green check if uploaded */}
+                {/* When file uploaded: check, eye, trash icons */}
                 {doc.file && (
-                  <button
-                    onClick={() => doc.previewUrl && setPreviewModal({ url: doc.previewUrl, name: doc.file?.name || doc.label })}
-                    className="w-9 h-9 rounded-full border border-green-300 bg-green-50 flex items-center justify-center flex-shrink-0"
-                    title="Preview"
-                  >
-                    <CheckCircle size={18} className="text-green-600" />
-                  </button>
+                  <>
+                    <button
+                      onClick={() => doc.previewUrl && setPreviewModal({ url: doc.previewUrl, name: doc.file?.name || doc.label })}
+                      className="w-8 h-8 rounded-full border border-green-300 bg-green-50 flex items-center justify-center flex-shrink-0"
+                    >
+                      <CheckCircle size={16} className="text-green-600" />
+                    </button>
+                    <button
+                      onClick={() => doc.previewUrl && setPreviewModal({ url: doc.previewUrl, name: doc.file?.name || doc.label })}
+                      className="w-8 h-8 rounded-full border border-border flex items-center justify-center flex-shrink-0"
+                    >
+                      <Eye size={14} className="text-primary" />
+                    </button>
+                    <button
+                      onClick={() => removeFile(idx)}
+                      className="w-8 h-8 rounded-full border border-red-200 flex items-center justify-center flex-shrink-0"
+                    >
+                      <Trash2 size={14} className="text-destructive" />
+                    </button>
+                  </>
                 )}
 
-                {/* Preview/Eye button when uploaded */}
-                {doc.file && (
-                  <button
-                    onClick={() => doc.previewUrl && setPreviewModal({ url: doc.previewUrl, name: doc.file?.name || doc.label })}
-                    className="w-9 h-9 rounded-full border border-border flex items-center justify-center flex-shrink-0"
-                    title="Preview"
-                  >
-                    <Eye size={16} className="text-primary" />
-                  </button>
-                )}
-
-                {/* Delete button when uploaded */}
-                {doc.file && (
-                  <button
-                    onClick={() => removeFile(idx)}
-                    className="w-9 h-9 rounded-full border border-red-200 flex items-center justify-center flex-shrink-0"
-                    title="Remove"
-                  >
-                    <Trash2 size={14} className="text-destructive" />
-                  </button>
-                )}
-
-                {/* NA button — shown when no file uploaded */}
+                {/* When no file: NA toggle + download/upload icon */}
                 {!doc.file && (
-                  <button
-                    onClick={() => toggleNA(idx)}
-                    className={`h-9 px-3 rounded-lg text-xs font-bold flex-shrink-0 transition-colors ${
-                      doc.isNA
-                        ? "bg-[hsl(217_91%_53%)] text-white"
-                        : "bg-muted text-muted-foreground border border-border"
-                    }`}
-                  >
-                    NA
-                  </button>
-                )}
-
-                {/* Upload/Download icon — shown when no file and not NA */}
-                {!doc.file && !doc.isNA && (
-                  <button
-                    onClick={() => fileRefs.current[idx]?.click()}
-                    className="w-9 h-9 rounded-full border border-border flex items-center justify-center flex-shrink-0"
-                    title="Upload"
-                  >
-                    <Download size={16} className="text-muted-foreground" />
-                  </button>
+                  <>
+                    <button
+                      onClick={() => toggleNA(idx)}
+                      className={`h-8 px-2.5 rounded text-xs font-bold flex-shrink-0 transition-colors ${
+                        doc.isNA
+                          ? "bg-primary text-primary-foreground"
+                          : "text-primary border border-primary/30"
+                      }`}
+                    >
+                      NA
+                    </button>
+                    <button
+                      onClick={() => fileRefs.current[idx]?.click()}
+                      className="w-8 h-8 flex items-center justify-center flex-shrink-0"
+                    >
+                      <Download size={18} className="text-primary" />
+                    </button>
+                  </>
                 )}
               </div>
             </div>
@@ -272,18 +257,18 @@ const ServiceDocs = () => {
         )}
       </div>
 
-      {/* Bottom buttons — matching screenshot */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border px-5 py-4 flex gap-3">
+      {/* Bottom buttons */}
+      <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border px-5 py-4 flex gap-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
         <Button
           variant="outline"
-          className="flex-1 h-12 border-primary text-primary font-semibold"
+          className="flex-1 h-11 border-primary text-primary font-semibold rounded-lg"
           onClick={() => saveDocuments(false)}
           disabled={saving}
         >
           {saving ? "Saving..." : "Save"}
         </Button>
         <Button
-          className="flex-1 h-12 font-semibold"
+          className="flex-1 h-11 font-semibold rounded-lg"
           onClick={() => saveDocuments(true)}
           disabled={saving}
         >
