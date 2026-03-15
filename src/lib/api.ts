@@ -62,6 +62,14 @@ export async function updateRecord(doctype: string, name: string, body: Record<s
   return res.json();
 }
 
+export async function deleteRecord(doctype: string, name: string) {
+  const res = await fetch(
+    BASE_URL + "?path=/api/resource/" + doctype + "/" + encodeURIComponent(name),
+    { method: "DELETE" }
+  );
+  return res.json();
+}
+
 export async function uploadFile(
   file: File,
   doctype: string,

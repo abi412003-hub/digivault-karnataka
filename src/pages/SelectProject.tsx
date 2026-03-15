@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CheckCircle, Hourglass, Clock, Eye, FileText, FolderOpen, MapPin, Plus, Wrench, ChevronDown, ChevronUp } from "lucide-react";
+import { CheckCircle, Hourglass, Clock, Eye, FileText, FolderOpen, MapPin, Plus, Wrench, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import PageHeader from "@/components/PageHeader";
 import BottomTabs from "@/components/BottomTabs";
 import { useAuth } from "@/contexts/AuthContext";
-import { fetchList } from "@/lib/api";
+import { fetchList, deleteRecord } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProjectData {
   name: string;
@@ -39,6 +40,47 @@ const SelectProject = () => {
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const [expandedProperty, setExpandedProperty] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ name: string; projectName: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const { toast } = useToast();
+
+  const handleDeleteProject = async (projName: string) => {
+    setDeleting(true);
+    try {
+      // Delete all service requests under this project
+      const srs = srsByProperty;
+      const projectProps = propertiesByProject[projName] || [];
+      for (const prop of projectProps) {
+        const propSRs = srs[prop.name] || [];
+        for (const sr of propSRs) {
+          await deleteRecord("DigiVault Service Request", sr.name).catch(() => {});
+        }
+        // Delete the property
+        await deleteRecord("DigiVault Property", prop.name).catch(() => {});
+      }
+      // Also delete any SRs directly linked to this project but no property
+      const allSRs = await fetchList(
+        "DigiVault Service Request",
+        ["name"],
+        [["project", "=", projName]]
+      );
+      for (const sr of allSRs || []) {
+        await deleteRecord("DigiVault Service Request", sr.name).catch(() => {});
+      }
+      // Delete the project itself
+      await deleteRecord("DigiVault Project", projName);
+      
+      // Remove from local state
+      setProjects((prev) => prev.filter((p) => p.name !== projName));
+      setPropertiesByProject((prev) => { const n = { ...prev }; delete n[projName]; return n; });
+      setDeleteConfirm(null);
+      toast({ title: "Project deleted successfully" });
+    } catch {
+      toast({ title: "Failed to delete project", variant: "destructive" });
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   useEffect(() => {
     if (!auth.client_id) return;
@@ -135,17 +177,30 @@ const SelectProject = () => {
           return (
             <div key={proj.name} className="border border-border rounded-2xl overflow-hidden bg-background">
               {/* Project header — tap to expand/collapse */}
-              <button
-                onClick={() => setExpandedProject(isExpanded ? null : proj.name)}
-                className="w-full px-4 py-3 flex items-center gap-3 text-left"
-              >
-                <FolderOpen size={20} className="text-primary flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <h2 className="text-base font-bold text-foreground truncate">{proj.project_name}</h2>
-                  <p className="text-xs text-muted-foreground">{proj.name} • {properties.length} properties • {allSRs.length} orders</p>
-                </div>
-                {isExpanded ? <ChevronUp size={18} className="text-muted-foreground" /> : <ChevronDown size={18} className="text-muted-foreground" />}
-              </button>
+              <div className="w-full px-4 py-3 flex items-center gap-3">
+                <button
+                  onClick={() => setExpandedProject(isExpanded ? null : proj.name)}
+                  className="flex items-center gap-3 flex-1 min-w-0 text-left"
+                >
+                  <FolderOpen size={20} className="text-primary flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <h2 className="text-base font-bold text-foreground truncate">{proj.project_name}</h2>
+                    <p className="text-xs text-muted-foreground">{proj.name} • {properties.length} properties • {allSRs.length} orders</p>
+                  </div>
+                  {isExpanded ? <ChevronUp size={18} className="text-muted-foreground" /> : <ChevronDown size={18} className="text-muted-foreground" />}
+                </button>
+                {/* Delete project button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeleteConfirm({ name: proj.name, projectName: proj.project_name });
+                  }}
+                  className="w-9 h-9 rounded-full border border-red-200 flex items-center justify-center flex-shrink-0 hover:bg-red-50 transition-colors"
+                  title="Delete project"
+                >
+                  <Trash2 size={15} className="text-destructive" />
+                </button>
+              </div>
 
               {/* Status counts */}
               <div className="px-4 pb-2 flex gap-2">
@@ -249,6 +304,42 @@ const SelectProject = () => {
       </div>
 
       <BottomTabs />
+
+      {/* Delete Confirmation Dialog */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-6">
+          <div className="bg-background rounded-2xl max-w-sm w-full p-5 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <div className="text-center space-y-2">
+              <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mx-auto">
+                <Trash2 size={24} className="text-destructive" />
+              </div>
+              <h3 className="text-lg font-bold text-foreground">Delete Project?</h3>
+              <p className="text-sm text-muted-foreground">
+                This will permanently delete <span className="font-semibold text-foreground">{deleteConfirm.projectName}</span> along
+                with all its properties, orders, and documents.
+              </p>
+              <p className="text-xs text-destructive font-semibold">This action cannot be undone.</p>
+            </div>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1 h-11"
+                onClick={() => setDeleteConfirm(null)}
+                disabled={deleting}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1 h-11 bg-destructive hover:bg-destructive/90 text-white"
+                onClick={() => handleDeleteProject(deleteConfirm.name)}
+                disabled={deleting}
+              >
+                {deleting ? "Deleting..." : "Delete"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
