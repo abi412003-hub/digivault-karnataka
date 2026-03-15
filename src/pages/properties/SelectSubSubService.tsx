@@ -52,33 +52,25 @@ const SelectSubSubService = () => {
   const handleCreateSR = async (sub: string, subSub: string) => {
     setSaving(true);
     try {
-      let projId = projectId;
-      // Auto-create project if needed
-      if (!projId) {
-        const projName = `${mainService}${sub ? " - " + sub : ""}${subSub ? " - " + subSub : ""}`;
-        const projRes = await createRecord("DigiVault Project", {
-          project_name: projName.slice(0, 140),
-          client: auth.client_id,
-          project_status: "In Progress",
-          service: mainService,
-        });
-        projId = projRes?.data?.name || "";
-        if (!projId) {
-          toast({ title: "Failed to create project", variant: "destructive" });
-          setSaving(false);
-          return;
-        }
+      // Project must already exist (created in step 2 of the flow)
+      // Property ID comes from the URL (created in step 3)
+      if (!projectId) {
+        toast({ title: "No project found — please create a project first", variant: "destructive" });
+        navigate("/create-project", { replace: true });
+        setSaving(false);
+        return;
       }
 
       const srBody: Record<string, any> = {
         client: auth.client_id,
-        project: projId,
+        project: projectId,
         main_service: mainService,
         sub_service: sub,
         sub_sub_service: subSub,
         request_status: "Documents Pending",
         request_date: new Date().toISOString().split("T")[0],
       };
+      // Property ID from URL — this is the property under the project
       if (id && id !== "undefined" && id !== "null") {
         srBody.property = id;
       }
@@ -86,7 +78,7 @@ const SelectSubSubService = () => {
       const srRes = await createRecord("DigiVault Service Request", srBody);
       const srName = srRes?.data?.name || "";
       await srTransition("sr_created", srName).catch(() => {});
-      toast({ title: "Service request created!" });
+      toast({ title: "Order created!" });
       navigate(`/service-request/${encodeURIComponent(srName)}/common-docs`, { replace: true });
     } catch {
       toast({ title: "Failed to create service request", variant: "destructive" });

@@ -2,10 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import PageHeader from "@/components/PageHeader";
 import BottomTabs from "@/components/BottomTabs";
-import { useAuth } from "@/contexts/AuthContext";
-import { fetchList, fetchOne, createRecord } from "@/lib/api";
-import { srTransition } from "@/lib/workflow";
-import { useToast } from "@/hooks/use-toast";
+import { fetchList, fetchOne } from "@/lib/api";
 
 interface ServiceData {
   name: string;
@@ -20,9 +17,6 @@ const SelectSubService = () => {
   const projectId = searchParams.get("project") || "";
   const projectName = searchParams.get("projectName") || "";
   const navigate = useNavigate();
-  const { auth } = useAuth();
-  const { toast } = useToast();
-  const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Two-level: first select main service, then sub-service
@@ -89,55 +83,6 @@ const SelectSubService = () => {
     navigate(`/properties/${encodeURIComponent(id!)}/select-sub-sub-service?${params}`);
   };
 
-  const createServiceRequest = async (mainService: string, subService: string) => {
-    setSaving(true);
-    try {
-      let projId = projectId;
-
-      // If no project exists, create one automatically
-      if (!projId) {
-        const projName = `${mainService}${subService ? " - " + subService : ""}`;
-        const projRes = await createRecord("DigiVault Project", {
-          project_name: projName,
-          client: auth.client_id,
-          project_status: "In Progress",
-          service: mainService,
-        });
-        projId = projRes?.data?.name || "";
-        if (!projId) {
-          toast({ title: "Failed to create project", variant: "destructive" });
-          setSaving(false);
-          return;
-        }
-      }
-
-      // Create the service request
-      const srBody: Record<string, any> = {
-        client: auth.client_id,
-        project: projId,
-        main_service: mainService,
-        sub_service: subService,
-        request_status: "Documents Pending",
-        request_date: new Date().toISOString().split("T")[0],
-      };
-      // Only include property if we have a valid property ID
-      if (id && id !== "undefined" && id !== "null") {
-        srBody.property = id;
-      }
-      const srRes = await createRecord("DigiVault Service Request", srBody);
-      const srName = srRes?.data?.name || "";
-      await srTransition("sr_created", srName).catch(() => {});
-      toast({ title: "Service request created!" });
-
-      // Go directly to common documents upload
-      navigate(`/service-request/${encodeURIComponent(srName)}/common-docs`, { replace: true });
-    } catch {
-      toast({ title: "Failed to create service request", variant: "destructive" });
-    } finally {
-      setSaving(false);
-    }
-  };
-
   return (
     <div className="flex flex-col min-h-screen bg-background pb-20">
       <PageHeader title={selectedMain ? "Select Sub Service" : "Select Service"} />
@@ -166,7 +111,7 @@ const SelectSubService = () => {
               <button
                 key={s.name}
                 onClick={() => handleSelectMain(s.name)}
-                disabled={saving}
+                disabled={false}
                 className="rounded-xl bg-[hsl(217_91%_53%)] p-3 min-h-[80px] flex items-center justify-center text-center transition-colors hover:bg-[hsl(217_91%_45%)] disabled:opacity-50"
               >
                 <span className="text-white text-[11px] font-medium leading-tight">
@@ -182,7 +127,7 @@ const SelectSubService = () => {
               <button
                 key={s}
                 onClick={() => handleSelectSub(s)}
-                disabled={saving}
+                disabled={false}
                 className="rounded-xl bg-[hsl(217_91%_53%)] p-3 min-h-[80px] flex items-center justify-center text-center transition-colors hover:bg-[hsl(217_91%_45%)] disabled:opacity-50"
               >
                 <span className="text-white text-[11px] font-medium leading-tight">{s}</span>
@@ -191,11 +136,6 @@ const SelectSubService = () => {
           </div>
         )}
 
-        {saving && (
-          <p className="text-center text-sm text-muted-foreground animate-pulse">
-            Creating service request...
-          </p>
-        )}
       </div>
       <BottomTabs />
     </div>
