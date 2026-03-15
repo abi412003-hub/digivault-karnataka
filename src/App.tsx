@@ -43,6 +43,8 @@ import MessagesList from "./pages/MessagesList";
 import MessageThread from "./pages/MessageThread";
 import DocumentListPage from "./pages/DocumentListPage";
 import SettingsPage from "./pages/SettingsPage";
+import TermsAndConditions from "./pages/TermsAndConditions";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -97,6 +99,8 @@ const App = () => (
             <Route path="/estimates" element={<DocumentListPage />} />
             <Route path="/invoices" element={<DocumentListPage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
