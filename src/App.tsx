@@ -60,6 +60,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/register-type" element={<RegisterType />} />
             <Route path="/register-form" element={<RegisterForm />} />
+            <Route path="/register-aggregator-type" element={<LandAggregatorType />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/properties" element={<Properties />} />
             <Route path="/properties/add" element={<AddProperty />} />
