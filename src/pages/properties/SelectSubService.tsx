@@ -57,17 +57,36 @@ const SelectSubService = () => {
       if (subs.length > 0) {
         setSubServices(subs);
       } else {
-        // No sub-services — create SR directly with this main service
-        await createServiceRequest(serviceName, "");
+        // No sub-services — go to sub-sub-service page (it will auto-create SR if no sub-subs exist)
+        const params = new URLSearchParams({
+          category: groupService,
+          main: serviceName,
+          sub: "",
+        });
+        if (projectId) params.set("project", projectId);
+        navigate(`/properties/${encodeURIComponent(id!)}/select-sub-sub-service?${params}`);
       }
     } catch {
-      // Fallback: create SR with just the main service
-      await createServiceRequest(serviceName, "");
+      // Fallback: go to sub-sub-service which will auto-create SR
+      const params = new URLSearchParams({
+        category: groupService,
+        main: serviceName,
+        sub: "",
+      });
+      if (projectId) params.set("project", projectId);
+      navigate(`/properties/${encodeURIComponent(id!)}/select-sub-sub-service?${params}`);
     }
   };
 
   const handleSelectSub = async (subService: string) => {
-    await createServiceRequest(selectedMain!, subService);
+    // Navigate to sub-sub-service selection (step 6 in the flow)
+    const params = new URLSearchParams({
+      category: groupService,
+      main: selectedMain!,
+      sub: subService,
+    });
+    if (projectId) params.set("project", projectId);
+    navigate(`/properties/${encodeURIComponent(id!)}/select-sub-sub-service?${params}`);
   };
 
   const createServiceRequest = async (mainService: string, subService: string) => {

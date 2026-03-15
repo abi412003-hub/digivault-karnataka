@@ -79,7 +79,7 @@ const AddProperty = () => {
 
     setSaving(true);
     try {
-      await createRecord("DigiVault Property", {
+      const propRes = await createRecord("DigiVault Property", {
         client: auth.client_id,
         property_name: form.name, property_type: form.type,
         property_title: form.title, property_rtc: form.rtc, property_size: form.size,
@@ -87,9 +87,15 @@ const AddProperty = () => {
         property_district: form.district, property_taluk: form.taluk,
         property_latitude: form.latitude, property_longitude: form.longitude,
       });
+      const propId = propRes?.data?.name || "";
       clearDraft();
       toast({ title: "Property added!" });
-      navigate("/properties", { replace: true });
+      // Get project from URL or localStorage
+      const projParam = new URLSearchParams(window.location.search).get("project") || "";
+      const projCtx = JSON.parse(localStorage.getItem("edv_current_project") || "{}");
+      const projectId = projParam || projCtx.id || "";
+      const params = projectId ? `?project=${encodeURIComponent(projectId)}` : "";
+      navigate(`/properties/${encodeURIComponent(propId)}/select-service${params}`, { replace: true });
     } catch {
       toast({ title: "Failed to add property", variant: "destructive" });
     } finally {

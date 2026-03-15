@@ -19,6 +19,7 @@ import PropertyDetails from "./pages/properties/PropertyDetails";
 import PropertyServices from "./pages/properties/PropertyServices";
 import SelectService from "./pages/properties/SelectService";
 import SelectSubService from "./pages/properties/SelectSubService";
+import SelectSubSubService from "./pages/properties/SelectSubSubService";
 import PropertyRequests from "./pages/properties/PropertyRequests";
 import CreateProject from "./pages/CreateProject";
 import SelectProject from "./pages/SelectProject";
@@ -70,6 +71,7 @@ const App = () => (
             <Route path="/properties/:id/services" element={<PropertyServices />} />
             <Route path="/properties/:id/select-service" element={<SelectService />} />
             <Route path="/properties/:id/select-sub-service" element={<SelectSubService />} />
+            <Route path="/properties/:id/select-sub-sub-service" element={<SelectSubSubService />} />
             <Route path="/properties/:id/requests" element={<PropertyRequests />} />
             <Route path="/create-project" element={<CreateProject />} />
             <Route path="/select-project" element={<SelectProject />} />
