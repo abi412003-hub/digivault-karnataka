@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import LocationPicker from "@/components/LocationPicker";
 import { ArrowLeft, Camera, ChevronDown, MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
